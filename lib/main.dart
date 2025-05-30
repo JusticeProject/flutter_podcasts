@@ -21,7 +21,7 @@ class PodcastApp extends StatelessWidget
       theme: ThemeData(
         colorScheme: ColorScheme.dark(),
       ),
-      home: const HomePage(title: 'Simple Podcasts'),
+      home: const HomePage(title: 'Library'),
     );
   }
 }
@@ -67,14 +67,19 @@ class _HomePageState extends State<HomePage>
         title: Text(widget.title),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: theme.textTheme.headlineMedium,
-            ),
+        child: GridView.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          padding: EdgeInsets.all(10),
+          children: [
+            Image.asset("assets/examples/sn.jpg"),
+            Image.asset("assets/examples/uls.jpg"),
+            Image.asset("assets/examples/gs.jpg"),
+            Image.asset("assets/examples/tc.jpg"),
+            Image.asset("assets/examples/dm.jpg"),
+            Image.asset("assets/examples/em.jpg"),
+            Image.asset("assets/examples/py.jpg")
           ],
         ),
       ),
@@ -88,3 +93,12 @@ class _HomePageState extends State<HomePage>
     );
   }
 }
+
+// RSS feeds:
+// https://feeds.twit.tv/sn.xml
+// https://feeds.twit.tv/uls.xml
+// https://feeds.megaphone.fm/gamescoop
+// https://feeds.simplecast.com/6WD3bDj7   // triple click
+// https://feeds.simplecast.com/JT6pbPkg   // is this correct for deepmind?
+// https://makingembeddedsystems.libsyn.com/rss
+// https://talkpython.fm/episodes/rss
