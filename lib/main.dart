@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'fetch.dart' as fetch;
+import 'utilities.dart' as utilities;
 
 //*************************************************************************************************
 
@@ -21,33 +23,44 @@ class PodcastApp extends StatelessWidget
       theme: ThemeData(
         colorScheme: ColorScheme.dark(),
       ),
-      home: const HomePage(title: 'Library'),
+      home: const LibraryPage(),
     );
   }
 }
 
 //*************************************************************************************************
 
-class HomePage extends StatefulWidget
+class LibraryPage extends StatefulWidget
 {
-  const HomePage({super.key, required this.title});
+  const LibraryPage({super.key});
 
-  final String title;
+  final String title = "Library";
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<LibraryPage> createState() => _LibraryPageState();
 }
 
 //*************************************************************************************************
 
-class _HomePageState extends State<HomePage>
+class _LibraryPageState extends State<LibraryPage>
 {
-  int _counter = 0;
 
-  void _incrementCounter()
+  void _addPodcast() async
   {
+    feeds.forEach((key, value) async {
+      try
+      {
+        String xml = await fetch.fetchRSS(value);
+        await utilities.saveFile("$key.xml", xml.codeUnits);
+      }
+      catch (err)
+      {
+        utilities.logDebugMsg(err.toString());
+      }
+    });
+
     setState(() {
-      _counter++;
+      // TODO:
     });
   }
 
@@ -87,7 +100,7 @@ class _HomePageState extends State<HomePage>
         label: Text("Add podcast"),
         backgroundColor: Colors.white, // specify the color behind the +
         foregroundColor: colorScheme.onPrimary, // specify the color of the +
-        onPressed: _incrementCounter,
+        onPressed: _addPodcast,
         icon: const Icon(Icons.add),
       )
     );
@@ -95,10 +108,12 @@ class _HomePageState extends State<HomePage>
 }
 
 // RSS feeds:
-// https://feeds.twit.tv/sn.xml
-// https://feeds.twit.tv/uls.xml
-// https://feeds.megaphone.fm/gamescoop
-// https://feeds.simplecast.com/6WD3bDj7   // triple click
-// https://feeds.simplecast.com/JT6pbPkg   // is this correct for deepmind?
-// https://makingembeddedsystems.libsyn.com/rss
-// https://talkpython.fm/episodes/rss
+Map<String, String> feeds = {
+  "Security Now": "https://feeds.twit.tv/sn.xml",
+  "The Untitled Linux Show" : "https://feeds.twit.tv/uls.xml",
+  "Game Scoop!" : "https://feeds.megaphone.fm/gamescoop",
+  "Triple Click" : "https://feeds.simplecast.com/6WD3bDj7",
+  "Google DeepMind" : "https://feeds.simplecast.com/JT6pbPkg",
+  "Embedded.cmd" : "https://makingembeddedsystems.libsyn.com/rss",
+  "Talk Python to Me" : "https://talkpython.fm/episodes/rss"
+};
