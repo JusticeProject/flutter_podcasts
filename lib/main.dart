@@ -78,12 +78,12 @@ class _HomePageState extends State<HomePage>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
+        label: Text("Add podcast"),
         backgroundColor: Colors.white, // specify the color behind the +
         foregroundColor: colorScheme.onPrimary, // specify the color of the +
         onPressed: _incrementCounter,
-        tooltip: 'Add podcast',
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
       )
     );
   }
