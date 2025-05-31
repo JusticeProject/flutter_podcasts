@@ -16,7 +16,6 @@ class MyHttpOverrides extends HttpOverrides{
 
 void main(List<String> args) async
 {
-  // TODO: only if debug mode
   HttpOverrides.global = MyHttpOverrides();
 
   Map<String, String> feeds = {

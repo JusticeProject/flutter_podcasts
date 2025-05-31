@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -140,3 +141,20 @@ Future<Uint8List> fetchAlbumArt(String url) async
 }
 
 //*************************************************************************************************
+
+Future<List<Image>> loadAlbumArt() async
+{
+  List<Image> images = [];
+
+  var path = await getLocalPath();
+  var dir = Directory(path);
+  var itemStream = dir.list();
+  await for (var item in itemStream)
+  {
+    if ((item is File) && (item.path.contains(".jpg")))
+    {
+      images.add(Image.file(item));
+    }
+  }
+  return images;
+}

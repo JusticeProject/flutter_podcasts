@@ -46,24 +46,33 @@ class LibraryPage extends StatefulWidget
 
 class _LibraryPageState extends State<LibraryPage>
 {
+  late Future<List<Image>> _albumCovers;
 
   void _addPodcast() async
   {
-    feeds.forEach((name, url) async {
+    for (var feed in feeds.entries)
+    {
       try
       {
-        await utilities.updateFeed(name, url);
-        utilities.logDebugMsg("$name done");
+        await utilities.updateFeed(feed.key, feed.value);
+        utilities.logDebugMsg("${feed.key} done");
       }
       catch (err)
       {
-        utilities.logDebugMsg("Exception!! $name ${err.toString()}");
+        utilities.logDebugMsg("Exception!! ${feed.key} ${err.toString()}");
       }
-    });
+
+    }
 
     setState(() {
-      // TODO:
+      _albumCovers = utilities.loadAlbumArt();
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _albumCovers = utilities.loadAlbumArt();
   }
 
   @override
@@ -82,21 +91,33 @@ class _LibraryPageState extends State<LibraryPage>
         title: Text(widget.title),
       ),
       body: Center(
-        child: GridView.count(
-          crossAxisCount: 2,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          padding: EdgeInsets.all(10),
-          children: [
-            // TODO: get them from the app local folder
-            Image.asset("assets/examples/sn.jpg"),
-            Image.asset("assets/examples/uls.jpg"),
-            Image.asset("assets/examples/gs.jpg"),
-            Image.asset("assets/examples/tc.jpg"),
-            Image.asset("assets/examples/dm.jpg"),
-            Image.asset("assets/examples/em.jpg"),
-            Image.asset("assets/examples/py.jpg")
-          ],
+        child: FutureBuilder(
+          future: _albumCovers,
+          builder: (context, snapshot) {
+            if (snapshot.hasData)
+            {
+              return GridView.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                padding: EdgeInsets.all(10),
+                children: [
+                  // TODO: android.permission.READ_EXTERNAL_STORAGE ??
+                  //Image.asset("assets/examples/Security Now.jpg")
+                  for (var img in snapshot.data!)
+                    img
+                ],
+              );
+            }
+            else if (snapshot.hasError)
+            {
+              return Text('${snapshot.error}');
+            }
+            else
+            {
+              return const CircularProgressIndicator();
+            }
+          }
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
