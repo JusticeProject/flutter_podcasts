@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'fetch.dart' as fetch;
 import 'utilities.dart' as utilities;
 
 //*************************************************************************************************
 
 void main()
 {
+  // TODO:
+  utilities.disableCertError();
+
   runApp(const PodcastApp());
 }
 
@@ -47,15 +49,15 @@ class _LibraryPageState extends State<LibraryPage>
 
   void _addPodcast() async
   {
-    feeds.forEach((key, value) async {
+    feeds.forEach((name, url) async {
       try
       {
-        String xml = await fetch.fetchRSS(value);
-        await utilities.saveFile("$key.xml", xml.codeUnits);
+        await utilities.updateFeed(name, url);
+        utilities.logDebugMsg("$name done");
       }
       catch (err)
       {
-        utilities.logDebugMsg(err.toString());
+        utilities.logDebugMsg("Exception!! $name ${err.toString()}");
       }
     });
 
@@ -86,6 +88,7 @@ class _LibraryPageState extends State<LibraryPage>
           crossAxisSpacing: 10,
           padding: EdgeInsets.all(10),
           children: [
+            // TODO: get them from the app local folder
             Image.asset("assets/examples/sn.jpg"),
             Image.asset("assets/examples/uls.jpg"),
             Image.asset("assets/examples/gs.jpg"),
@@ -114,6 +117,6 @@ Map<String, String> feeds = {
   "Game Scoop!" : "https://feeds.megaphone.fm/gamescoop",
   "Triple Click" : "https://feeds.simplecast.com/6WD3bDj7",
   "Google DeepMind" : "https://feeds.simplecast.com/JT6pbPkg",
-  "Embedded.cmd" : "https://makingembeddedsystems.libsyn.com/rss",
+  "Embedded.fm" : "https://makingembeddedsystems.libsyn.com/rss",
   "Talk Python to Me" : "https://talkpython.fm/episodes/rss"
 };

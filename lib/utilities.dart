@@ -1,11 +1,36 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:xml/xml.dart';
 
 //*************************************************************************************************
 
-logDebugMsg(String msg)
+class MyHttpOverrides extends HttpOverrides
+{
+  @override
+  HttpClient createHttpClient(SecurityContext? context)
+  {
+    var client = super.createHttpClient(context);
+    client.badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
+    return client;
+  }
+}
+
+//*************************************************************************************************
+
+void disableCertError()
+{
+  if (kDebugMode)
+  {
+    HttpOverrides.global = MyHttpOverrides();
+  }
+}
+
+//*************************************************************************************************
+
+void logDebugMsg(String msg)
 {
   if (kDebugMode)
   {
@@ -22,7 +47,7 @@ Future<String> getLocalPath() async
   // return directory.path;
 
   var dir1 = await getApplicationCacheDirectory();
-  logDebugMsg(dir1.path);
+  //logDebugMsg(dir1.path);
   return dir1.path;
 
   //var dir2 = await getApplicationSupportDirectory();
@@ -37,11 +62,81 @@ Future<String> getLocalPath() async
 
 //*************************************************************************************************
 
-Future<void> saveFile(String filename, List<int> data) async
+Future<void> updateFeed(String name, String url) async
 {
   String localDir = await getLocalPath();
-  String fullPath = localDir + Platform.pathSeparator + filename;
-  logDebugMsg("Writing ${data.length} bytes to $fullPath");
-  File fd = File(fullPath);
-  await fd.writeAsBytes(data);
+
+  Uint8List rssBytes = await fetchRSS(url);
+  String xmlFilename = "$localDir${Platform.pathSeparator}$name.xml";
+  await saveToFile(xmlFilename, rssBytes);
+  
+  String xml = await readFile(xmlFilename);
+  String imgURL = getImgURLFromXML(xml);
+  
+  Uint8List imgBytes = await fetchAlbumArt(imgURL);
+  String imgFilename = "$localDir${Platform.pathSeparator}$name.jpg";
+  await saveToFile(imgFilename, imgBytes);
 }
+
+//*************************************************************************************************
+
+Future<void> saveToFile(String filename, Uint8List bytes) async
+{
+  File fd = File(filename);
+  await fd.writeAsBytes(bytes);
+}
+
+//*************************************************************************************************
+
+Future<String> readFile(String filename) async
+{
+  File fd = File(filename);
+  return await fd.readAsString();
+}
+
+//*************************************************************************************************
+
+String getImgURLFromXML(String xml)
+{
+  XmlDocument doc = XmlDocument.parse(xml);
+
+  var elements = doc.findAllElements("image");
+  if (elements.isNotEmpty)
+  {
+    var urls = elements.first.findElements("url");
+    if (urls.isNotEmpty)
+    {
+      return urls.first.innerText;
+    }
+  }
+
+  elements = doc.findAllElements("itunes:image");
+  if (elements.isNotEmpty)
+  {
+    var first = elements.first;
+    if (first.attributes.isNotEmpty)
+    {
+      return first.attributes.first.value;
+    }
+  }
+
+  throw Exception("could not find image url in xml");
+}
+
+//*************************************************************************************************
+
+Future<Uint8List> fetchRSS(String url) async
+{
+  final resp = await http.get(Uri.parse(url));
+  return resp.bodyBytes;
+}
+
+//*************************************************************************************************
+
+Future<Uint8List> fetchAlbumArt(String url) async
+{
+  final resp = await http.get(Uri.parse(url));
+  return resp.bodyBytes;
+}
+
+//*************************************************************************************************
