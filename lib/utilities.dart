@@ -156,5 +156,7 @@ Future<List<Image>> loadAlbumArt() async
       images.add(Image.file(item));
     }
   }
+  // for testing the circular progress indicator
+  //await Future.delayed(Duration(seconds: 5));
   return images;
 }

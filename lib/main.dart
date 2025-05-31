@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'utilities.dart' as utilities;
 
 //*************************************************************************************************
+//*************************************************************************************************
+//*************************************************************************************************
 
 void main()
 {
@@ -11,6 +13,8 @@ void main()
   runApp(const PodcastApp());
 }
 
+//*************************************************************************************************
+//*************************************************************************************************
 //*************************************************************************************************
 
 class PodcastApp extends StatelessWidget
@@ -31,6 +35,8 @@ class PodcastApp extends StatelessWidget
 }
 
 //*************************************************************************************************
+//*************************************************************************************************
+//*************************************************************************************************
 
 class LibraryPage extends StatefulWidget
 {
@@ -43,10 +49,14 @@ class LibraryPage extends StatefulWidget
 }
 
 //*************************************************************************************************
+//*************************************************************************************************
+//*************************************************************************************************
 
 class _LibraryPageState extends State<LibraryPage>
 {
-  late Future<List<Image>> _albumCovers;
+  late Future<List<Image>> _futureAlbumCovers;
+
+  //*******************************************************
 
   void _addPodcast() async
   {
@@ -65,15 +75,19 @@ class _LibraryPageState extends State<LibraryPage>
     }
 
     setState(() {
-      _albumCovers = utilities.loadAlbumArt();
+      _futureAlbumCovers = utilities.loadAlbumArt();
     });
   }
+
+  //*******************************************************
 
   @override
   void initState() {
     super.initState();
-    _albumCovers = utilities.loadAlbumArt();
+    _futureAlbumCovers = utilities.loadAlbumArt();
   }
+
+  //*******************************************************
 
   @override
   Widget build(BuildContext context)
@@ -92,7 +106,7 @@ class _LibraryPageState extends State<LibraryPage>
       ),
       body: Center(
         child: FutureBuilder(
-          future: _albumCovers,
+          future: _futureAlbumCovers,
           builder: (context, snapshot) {
             if (snapshot.hasData)
             {
@@ -103,9 +117,7 @@ class _LibraryPageState extends State<LibraryPage>
                 padding: EdgeInsets.all(10),
                 children: [
                   // TODO: android.permission.READ_EXTERNAL_STORAGE ??
-                  //Image.asset("assets/examples/Security Now.jpg")
-                  for (var img in snapshot.data!)
-                    img
+                  for (var img in snapshot.data!) img
                 ],
               );
             }
@@ -131,6 +143,9 @@ class _LibraryPageState extends State<LibraryPage>
   }
 }
 
+//*************************************************************************************************
+
+// TODO: remove this
 // RSS feeds:
 Map<String, String> feeds = {
   "Security Now": "https://feeds.twit.tv/sn.xml",
