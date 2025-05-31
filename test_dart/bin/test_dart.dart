@@ -29,17 +29,29 @@ void main(List<String> args) async
     "Talk Python to Me" : "https://talkpython.fm/episodes/rss"
   };
 
-  feeds.forEach((name, url) async {
+  List<String> status = [];
+
+  for (var entry in feeds.entries)
+  {
     try
     {
-      await updateFeed(name, url);
-      print("$name done");
+      await updateFeed(entry.key, entry.value);
+      print("${entry.key} done");
+      status.add("${entry.key} done");
     }
     catch (err)
     {
-      print("Exception!! $name ${err.toString()}");
+      print("Exception!! ${entry.key} ${err.toString()}");
+      status.add("Exception!! ${entry.key} ${err.toString()}");
     }
-  });
+  }
+
+  for (var item in status)
+  {
+    print(item);
+  }
+
+  print("main done");
 }
 
 Future<void> updateFeed(String name, String url) async
