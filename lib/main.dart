@@ -54,6 +54,7 @@ class LibraryPage extends StatefulWidget
 
 class _LibraryPageState extends State<LibraryPage>
 {
+  final ScrollController _scrollController = ScrollController();
   late Future<List<Image>> _futureAlbumCovers;
 
   //*******************************************************
@@ -65,16 +66,31 @@ class _LibraryPageState extends State<LibraryPage>
       int podcastNumber = (await _futureAlbumCovers).length;
       await utilities.updateFeed(podcastNumber, url);
       utilities.logDebugMsg("$podcastNumber done");
-      podcastNumber++;
     }
     catch (err)
     {
+      // TODO: notify user with a SnackBar?
       utilities.logDebugMsg("Exception!! ${err.toString()}");
     }
 
+    // TODO: if I delete a podcast and the album art, then it will crash 
+    //because _futureAlbumCovers won't be able to find the files
     setState(() {
       _futureAlbumCovers = utilities.loadAlbumArt();
     });
+
+    // scroll to the bottom of the list when the Future completes, but add a delay to give time for 
+    // the build function to set the size of the grid view
+    _futureAlbumCovers.then((value) {
+      utilities.logDebugMsg("future complete, setting scroll after timeout");
+      Future.delayed(Duration(seconds: 1), () {
+        utilities.logDebugMsg("setting scroll");
+        _scrollController.animateTo(_scrollController.position.maxScrollExtent + 1000, 
+          duration: Duration(milliseconds: 500), curve: Curves.linear);
+      });
+    });
+
+    utilities.logDebugMsg("done with _onNewPodcast");
   }
 
   //*******************************************************
@@ -83,6 +99,14 @@ class _LibraryPageState extends State<LibraryPage>
   void initState() {
     super.initState();
     _futureAlbumCovers = utilities.loadAlbumArt();
+  }
+
+  //*******************************************************
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   //*******************************************************
@@ -109,6 +133,7 @@ class _LibraryPageState extends State<LibraryPage>
             if (snapshot.hasData)
             {
               return GridView.count(
+                controller: _scrollController,
                 crossAxisCount: 2,
                 mainAxisSpacing: 10,
                 crossAxisSpacing: 10,

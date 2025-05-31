@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:xml/xml.dart';
 import 'package:http/http.dart' as http;
 
+//*************************************************************************************************
+
 class MyHttpOverrides extends HttpOverrides{
   @override
   HttpClient createHttpClient(SecurityContext? context)
@@ -14,18 +16,74 @@ class MyHttpOverrides extends HttpOverrides{
   }
 }
 
+//*************************************************************************************************
+
 void main(List<String> args) async
+{
+  List<String> names = await loadAllAlbumArt();
+  for (var name in names)
+  {
+    print(name);
+  }
+
+  print("main done");
+}
+
+//*************************************************************************************************
+
+Future<List<String>> loadAllAlbumArt() async
+{
+  List<String> names = [];
+  var dir = Directory("bin");
+  var items = dir.list();
+  await for (var item in items)
+  {
+    if ((item is File) && (item.path.contains(".jpg")))
+    {
+      names.add(item.path);
+    }
+  }
+
+  names.sort((a, b) {
+    // - if less
+    // 0 if equal
+    // + if greater
+    if (a.length > b.length)
+    {
+      return 1;
+    }
+    else if (a.length < b.length)
+    {
+      return -1;
+    }
+    else 
+    {
+      return a.compareTo(b);
+    }
+  });
+
+  return names;
+}
+
+//*************************************************************************************************
+
+Future<void> updateAll() async
 {
   HttpOverrides.global = MyHttpOverrides();
 
   Map<String, String> feeds = {
-    "Security Now": "https://feeds.twit.tv/sn.xml",
-    "The Untitled Linux Show" : "https://feeds.twit.tv/uls.xml",
-    "Game Scoop!" : "https://feeds.megaphone.fm/gamescoop",
-    "Triple Click" : "https://feeds.simplecast.com/6WD3bDj7",
-    "Google DeepMind" : "https://feeds.simplecast.com/JT6pbPkg",
-    "Embedded.fm" : "https://makingembeddedsystems.libsyn.com/rss",
-    "Talk Python to Me" : "https://talkpython.fm/episodes/rss"
+    "0": "https://feeds.twit.tv/sn.xml",
+    "1" : "https://feeds.twit.tv/uls.xml",
+    "2" : "https://feeds.megaphone.fm/gamescoop",
+    "3" : "https://feeds.simplecast.com/6WD3bDj7",
+    "4" : "https://feeds.simplecast.com/JT6pbPkg",
+    "5" : "https://makingembeddedsystems.libsyn.com/rss",
+    "6" : "https://talkpython.fm/episodes/rss",
+    "7" : "https://www.sciencefriday.com/feed/podcast/science-friday/",
+    "8" : "https://feeds.megaphone.fm/ignbeyond",
+    "9" : "https://feeds.megaphone.fm/ignunlocked",
+    "10" : "https://feeds.megaphone.fm/unfiltered",
+    "11" : "https://feeds.megaphone.fm/nvc"
   };
 
   List<String> status = [];
@@ -49,9 +107,9 @@ void main(List<String> args) async
   {
     print(item);
   }
-
-  print("main done");
 }
+
+//*************************************************************************************************
 
 Future<void> updateFeed(String name, String url) async
 {
@@ -71,17 +129,23 @@ Future<void> updateFeed(String name, String url) async
   print(title);
 }
 
+//*************************************************************************************************
+
 Future<void> saveToFile(String filename, Uint8List bytes) async
 {
   File fd = File(filename);
   await fd.writeAsBytes(bytes);
 }
 
+//*************************************************************************************************
+
 Future<String> readFile(String filename) async
 {
   File fd = File(filename);
   return await fd.readAsString();
 }
+
+//*************************************************************************************************
 
 String getImgURLFromXML(XmlDocument xml)
 {
@@ -108,6 +172,8 @@ String getImgURLFromXML(XmlDocument xml)
   throw Exception("could not find image url in xml");
 }
 
+//*************************************************************************************************
+
 String getPodcastTitle(XmlDocument xml)
 {
   var elements = xml.findAllElements("title");
@@ -119,14 +185,20 @@ String getPodcastTitle(XmlDocument xml)
   throw Exception("could not find title in xml");
 }
 
+//*************************************************************************************************
+
 Future<Uint8List> fetchRSS(String url) async
 {
   final resp = await http.get(Uri.parse(url));
   return resp.bodyBytes;
 }
 
+//*************************************************************************************************
+
 Future<Uint8List> fetchAlbumArt(String url) async
 {
   final resp = await http.get(Uri.parse(url));
   return resp.bodyBytes;
 }
+
+//*************************************************************************************************

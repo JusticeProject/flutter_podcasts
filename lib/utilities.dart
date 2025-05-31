@@ -159,18 +159,40 @@ Future<Uint8List> fetchAlbumArt(String url) async
 
 Future<List<Image>> loadAlbumArt() async
 {
-  List<Image> images = [];
-
   var path = await getLocalPath();
   var dir = Directory(path);
   var itemStream = dir.list();
+
+  // add file names to a list, then sort, then create images list
+  List<File> jpgFiles = [];
   await for (var item in itemStream)
   {
     if ((item is File) && (item.path.contains(".jpg")))
     {
-      images.add(Image.file(item));
+      jpgFiles.add(item);
     }
   }
+
+  jpgFiles.sort((a, b) {
+    // - if less
+    // 0 if equal
+    // + if greater
+    if (a.path.length > b.path.length)
+    {
+      return 1;
+    }
+    else if (a.path.length < b.path.length)
+    {
+      return -1;
+    }
+    else 
+    {
+      return a.path.compareTo(b.path);
+    }
+  });
+
+  List<Image> images = [for (var jpg in jpgFiles) Image.file(jpg)];
+
   // for testing the circular progress indicator
   //await Future.delayed(Duration(seconds: 5));
   return images;
