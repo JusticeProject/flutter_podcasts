@@ -63,20 +63,24 @@ Future<String> getLocalPath() async
 
 //*************************************************************************************************
 
-Future<void> updateFeed(String name, String url) async
+Future<void> updateFeed(int podcastNumber, String url) async
 {
   String localDir = await getLocalPath();
 
   Uint8List rssBytes = await fetchRSS(url);
-  String xmlFilename = "$localDir${Platform.pathSeparator}$name.xml";
+  String xmlFilename = "$localDir${Platform.pathSeparator}$podcastNumber.xml";
   await saveToFile(xmlFilename, rssBytes);
   
-  String xml = await readFile(xmlFilename);
+  String text = await readFile(xmlFilename);
+  XmlDocument xml = XmlDocument.parse(text);
+
   String imgURL = getImgURLFromXML(xml);
-  
   Uint8List imgBytes = await fetchAlbumArt(imgURL);
-  String imgFilename = "$localDir${Platform.pathSeparator}$name.jpg";
+  String imgFilename = "$localDir${Platform.pathSeparator}$podcastNumber.jpg";
   await saveToFile(imgFilename, imgBytes);
+
+  String title = getPodcastTitle(xml);
+  logDebugMsg("found title $title");
 }
 
 //*************************************************************************************************
@@ -97,11 +101,9 @@ Future<String> readFile(String filename) async
 
 //*************************************************************************************************
 
-String getImgURLFromXML(String xml)
+String getImgURLFromXML(XmlDocument xml)
 {
-  XmlDocument doc = XmlDocument.parse(xml);
-
-  var elements = doc.findAllElements("image");
+  var elements = xml.findAllElements("image");
   if (elements.isNotEmpty)
   {
     var urls = elements.first.findElements("url");
@@ -111,7 +113,7 @@ String getImgURLFromXML(String xml)
     }
   }
 
-  elements = doc.findAllElements("itunes:image");
+  elements = xml.findAllElements("itunes:image");
   if (elements.isNotEmpty)
   {
     var first = elements.first;
@@ -122,6 +124,19 @@ String getImgURLFromXML(String xml)
   }
 
   throw Exception("could not find image url in xml");
+}
+
+//*************************************************************************************************
+
+String getPodcastTitle(XmlDocument xml)
+{
+  var elements = xml.findAllElements("title");
+  if (elements.isNotEmpty)
+  {
+    return elements.first.innerText;
+  }
+
+  throw Exception("could not find title in xml");
 }
 
 //*************************************************************************************************

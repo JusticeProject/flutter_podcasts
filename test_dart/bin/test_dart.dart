@@ -59,12 +59,16 @@ Future<void> updateFeed(String name, String url) async
   String xmlFilename = "bin${Platform.pathSeparator}$name.xml";
   await saveToFile(xmlFilename, rssBytes);
   
-  String xml = await readFile(xmlFilename);
+  String text = await readFile(xmlFilename);
+  XmlDocument xml = XmlDocument.parse(text);
+
   String imgURL = getImgURLFromXML(xml);
-  
   Uint8List imgBytes = await fetchAlbumArt(imgURL);
   String imgFilename = "bin${Platform.pathSeparator}$name.jpg";
   await saveToFile(imgFilename, imgBytes);
+
+  String title = getPodcastTitle(xml);
+  print(title);
 }
 
 Future<void> saveToFile(String filename, Uint8List bytes) async
@@ -79,11 +83,9 @@ Future<String> readFile(String filename) async
   return await fd.readAsString();
 }
 
-String getImgURLFromXML(String xml)
+String getImgURLFromXML(XmlDocument xml)
 {
-  XmlDocument doc = XmlDocument.parse(xml);
-
-  var elements = doc.findAllElements("image");
+  var elements = xml.findAllElements("image");
   if (elements.isNotEmpty)
   {
     var urls = elements.first.findElements("url");
@@ -93,7 +95,7 @@ String getImgURLFromXML(String xml)
     }
   }
 
-  elements = doc.findAllElements("itunes:image");
+  elements = xml.findAllElements("itunes:image");
   if (elements.isNotEmpty)
   {
     var first = elements.first;
@@ -104,6 +106,17 @@ String getImgURLFromXML(String xml)
   }
 
   throw Exception("could not find image url in xml");
+}
+
+String getPodcastTitle(XmlDocument xml)
+{
+  var elements = xml.findAllElements("title");
+  if (elements.isNotEmpty)
+  {
+    return elements.first.innerText;
+  }
+
+  throw Exception("could not find title in xml");
 }
 
 Future<Uint8List> fetchRSS(String url) async

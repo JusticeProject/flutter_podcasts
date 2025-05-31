@@ -58,20 +58,18 @@ class _LibraryPageState extends State<LibraryPage>
 
   //*******************************************************
 
-  void _addPodcast() async
+  void _onNewPodcast(String url) async
   {
-    for (var feed in feeds.entries)
+    try
     {
-      try
-      {
-        await utilities.updateFeed(feed.key, feed.value);
-        utilities.logDebugMsg("${feed.key} done");
-      }
-      catch (err)
-      {
-        utilities.logDebugMsg("Exception!! ${feed.key} ${err.toString()}");
-      }
-
+      int podcastNumber = (await _futureAlbumCovers).length;
+      await utilities.updateFeed(podcastNumber, url);
+      utilities.logDebugMsg("$podcastNumber done");
+      podcastNumber++;
+    }
+    catch (err)
+    {
+      utilities.logDebugMsg("Exception!! ${err.toString()}");
     }
 
     setState(() {
@@ -92,8 +90,8 @@ class _LibraryPageState extends State<LibraryPage>
   @override
   Widget build(BuildContext context)
   {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    //final theme = Theme.of(context);
+    //final colorScheme = theme.colorScheme;
     // for dark theme the colors are:
     // primary = purple
     // inversePrimary = black
@@ -101,7 +99,7 @@ class _LibraryPageState extends State<LibraryPage>
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: colorScheme.inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
       body: Center(
@@ -134,9 +132,9 @@ class _LibraryPageState extends State<LibraryPage>
       ),
       floatingActionButton: FloatingActionButton.extended(
         label: Text("Add podcast"),
-        backgroundColor: Colors.white, // specify the color behind the +
-        foregroundColor: colorScheme.onPrimary, // specify the color of the +
-        onPressed: _addPodcast,
+        //backgroundColor: Colors.white, // specify the color behind the +
+        //foregroundColor: colorScheme.onPrimary, // specify the color of the +
+        onPressed: () => showAddPodcastDialog(context, _onNewPodcast),
         icon: const Icon(Icons.add),
       )
     );
@@ -145,14 +143,61 @@ class _LibraryPageState extends State<LibraryPage>
 
 //*************************************************************************************************
 
-// TODO: remove this
+void showAddPodcastDialog(BuildContext context, void Function(String url) onNewPodcast)
+{
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      String url = "";
+      return AlertDialog(
+        title: const Text("Enter the URL of the RSS feed:"),
+        content: TextField(autofocus: true,
+          onChanged: (value) {
+            url = value;
+          },
+          onSubmitted: (value) {
+            if (url.isNotEmpty) {
+              onNewPodcast(url);
+              Navigator.of(context).pop();
+            }
+          },
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text('Add'),
+            onPressed: () {
+              if (url.isNotEmpty) {
+                onNewPodcast(url);
+                Navigator.of(context).pop();
+              }
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+//*************************************************************************************************
+
 // RSS feeds:
-Map<String, String> feeds = {
-  "Security Now": "https://feeds.twit.tv/sn.xml",
-  "The Untitled Linux Show" : "https://feeds.twit.tv/uls.xml",
-  "Game Scoop!" : "https://feeds.megaphone.fm/gamescoop",
-  "Triple Click" : "https://feeds.simplecast.com/6WD3bDj7",
-  "Google DeepMind" : "https://feeds.simplecast.com/JT6pbPkg",
-  "Embedded.fm" : "https://makingembeddedsystems.libsyn.com/rss",
-  "Talk Python to Me" : "https://talkpython.fm/episodes/rss"
-};
+/*
+https://feeds.twit.tv/sn.xml
+https://feeds.twit.tv/uls.xml
+https://feeds.megaphone.fm/gamescoop
+https://feeds.simplecast.com/6WD3bDj7
+https://feeds.simplecast.com/JT6pbPkg
+https://makingembeddedsystems.libsyn.com/rss
+https://talkpython.fm/episodes/rss
+https://www.sciencefriday.com/feed/podcast/science-friday/
+https://feeds.megaphone.fm/ignbeyond
+https://feeds.megaphone.fm/ignunlocked
+https://feeds.megaphone.fm/unfiltered
+https://feeds.megaphone.fm/nvc
+*/
