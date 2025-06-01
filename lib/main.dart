@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'podcast_page.dart';
 import 'podcast.dart';
 import 'utilities.dart';
 import 'storage_handler.dart';
@@ -181,8 +182,12 @@ class _LibraryPageState extends State<LibraryPage>
                 itemCount: _podcastList.length,
                 itemBuilder: (context, index) {
                   // TODO: could use GridTile wrapped around InkWell wrapped around image to show an animation when long pressing
+                  // TODO: show number of episodes downloaded below each album art
                   return GestureDetector(
-                    onLongPress: () => showRemovePodcastDialog(context, _podcastList[index].title, index, _onRemovePodcast), 
+                    onTap: () => 
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => PodcastPage(podcast: _podcastList[index]))),
+                    onLongPress: () => 
+                      showRemovePodcastDialog(context, _podcastList[index].title, index, _onRemovePodcast), 
                     child: _podcastList[index].albumArt
                   );
                 }
