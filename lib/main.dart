@@ -308,3 +308,53 @@ List<String> feeds = [
 "https://feeds.megaphone.fm/kindafunnypodcast",
 "https://feeds.npr.org/510289/podcast.xml",
 ];
+
+
+
+// TODO list:
+
+// General:
+// use const Widget whenever possible to reduce screen rebuild time
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+// Library page:
+// Refresh, drag down on main Library page
+
+// if user rotates the phone to landscape then
+// if MediaQuery.sizeOf(context).width > height or
+// > 1000 then use more grid count,
+// or wrap with a LayoutBuilder which provides the context/constraints
+// or Display class https://api.flutter.dev/flutter/dart-ui/Display-class.html
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+// Podcast Page:
+// Refresh, drag down?
+// ListView?
+// ListTile or custom widget?
+// IconButton(Icons.download, size: , color:), will download or remove
+// Play button
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+// Episode Page:
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+// Data Storage:
+
+// For each subscription save for offline usage:
+// url and date last retrieved in a .txt file
+// albumArt
+// entire xml file?
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+// Audio player:
+
+// audio player at bottom of each page
+// audio library: https://pub.dev/packages/just_audio
+// audio only, no video
+// stops playing when headphones removed
+// audio player shows on lockscreen
