@@ -11,6 +11,8 @@ import 'utilities.dart';
 
 //*************************************************************************************************
 
+// TODO: could maybe make this a static singleton with getInstance and private constructor. Then you
+// don't have to pass it around to all the windows/widgets that need to use it.
 class StorageHandler
 {
   int _highestPodcastNumber = -1;

@@ -22,16 +22,16 @@ class PodcastApp extends StatelessWidget
 {
   PodcastApp({super.key});
   final StorageHandler storageHandler = StorageHandler();
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   @override
   Widget build(BuildContext context)
   {
     return MaterialApp(
       title: 'Simple Podcasts App',
-      theme: ThemeData(
-        colorScheme: ColorScheme.dark(),
-      ),
-      home: LibraryPage(storageHandler: storageHandler),
+      scaffoldMessengerKey: _scaffoldMessengerKey,
+      theme: ThemeData(colorScheme: ColorScheme.dark()),
+      home: LibraryPage(storageHandler: storageHandler, scaffoldMessengerKey: _scaffoldMessengerKey),
     );
   }
 }
@@ -42,10 +42,14 @@ class PodcastApp extends StatelessWidget
 
 class LibraryPage extends StatefulWidget
 {
-  const LibraryPage({super.key, required this.storageHandler});
+  const LibraryPage({super.key, required this.storageHandler, required this.scaffoldMessengerKey});
 
   final String title = "Library";
   final StorageHandler storageHandler;
+
+  // this scaffold messenger key is used to show the SnackBar (toast) outside of a build function since otherwise 
+  // we would need the BuildContext
+  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
 
   @override
   State<LibraryPage> createState() => _LibraryPageState();
@@ -60,6 +64,14 @@ class _LibraryPageState extends State<LibraryPage>
   final ScrollController _scrollController = ScrollController();
   late Future<List<Podcast>> _futurePodcastList;
   List<Podcast> _podcastList = [];
+
+  //*******************************************************
+
+  void _showMessageToUser(String msg)
+  {
+    // widget in this case refers to the corresponding StatefulWidget
+    widget.scaffoldMessengerKey.currentState!.showSnackBar(SnackBar(content: Text(msg)));
+  }
 
   //*******************************************************
 
@@ -83,8 +95,9 @@ class _LibraryPageState extends State<LibraryPage>
     }
     catch (err)
     {
-      // TODO: notify user with a SnackBar?
+      // notify user with a SnackBar
       logDebugMsg("Exception!! ${err.toString()}");
+      _showMessageToUser(err.toString());
     }
 
     logDebugMsg("done with _onNewPodcast");
@@ -237,4 +250,6 @@ https://feeds.megaphone.fm/ignbeyond
 https://feeds.megaphone.fm/ignunlocked
 https://feeds.megaphone.fm/unfiltered
 https://feeds.megaphone.fm/nvc
+https://feeds.megaphone.fm/kindafunnypodcast
+https://feeds.npr.org/510289/podcast.xml
 */
