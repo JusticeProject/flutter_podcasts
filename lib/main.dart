@@ -9,7 +9,6 @@ import 'storage_handler.dart';
 
 void main()
 {
-  // TODO:
   disableCertError();
 
   runApp(PodcastApp());
@@ -100,6 +99,7 @@ class _LibraryPageState extends State<LibraryPage>
       _podcastList.removeAt(index);
     });
     // TODO: need to delete it from the filesystem
+    // storageHandler.removePodcast() async but don't call await
   }
 
   //*******************************************************
@@ -151,7 +151,7 @@ class _LibraryPageState extends State<LibraryPage>
                 padding: EdgeInsets.all(10),
                 itemCount: _podcastList.length,
                 itemBuilder: (context, index) {
-                  // TODO: show dialog to confirm deletion
+                  // TODO: show dialog to confirm deletion, use dedicated button for deleting?
                   return GestureDetector(onLongPress: () => _onDeletePodcast(index), child: _podcastList[index].albumArt);
                 }
               );

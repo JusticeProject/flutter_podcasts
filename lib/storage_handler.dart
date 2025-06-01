@@ -21,7 +21,7 @@ class StorageHandler
     //logDebugMsg(directory.path);
     // return directory.path;
 
-    // TODO: android.permission.READ_EXTERNAL_STORAGE ?? also need to figure out which one to use
+    // TODO: android.permission.READ_EXTERNAL_STORAGE ?? if windows use this func but if android use which?
     var dir1 = await getApplicationCacheDirectory();
     //logDebugMsg(dir1.path);
     return dir1.path;
