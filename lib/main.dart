@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'utilities.dart' as utilities;
+import 'podcast.dart';
+import 'utilities.dart';
+import 'storage_handler.dart';
 
 //*************************************************************************************************
 //*************************************************************************************************
@@ -8,9 +10,9 @@ import 'utilities.dart' as utilities;
 void main()
 {
   // TODO:
-  utilities.disableCertError();
+  disableCertError();
 
-  runApp(const PodcastApp());
+  runApp(PodcastApp());
 }
 
 //*************************************************************************************************
@@ -19,7 +21,8 @@ void main()
 
 class PodcastApp extends StatelessWidget
 {
-  const PodcastApp({super.key});
+  PodcastApp({super.key});
+  final StorageHandler storageHandler = StorageHandler();
 
   @override
   Widget build(BuildContext context)
@@ -29,7 +32,7 @@ class PodcastApp extends StatelessWidget
       theme: ThemeData(
         colorScheme: ColorScheme.dark(),
       ),
-      home: const LibraryPage(),
+      home: LibraryPage(storageHandler: storageHandler),
     );
   }
 }
@@ -40,9 +43,10 @@ class PodcastApp extends StatelessWidget
 
 class LibraryPage extends StatefulWidget
 {
-  const LibraryPage({super.key});
+  const LibraryPage({super.key, required this.storageHandler});
 
   final String title = "Library";
+  final StorageHandler storageHandler;
 
   @override
   State<LibraryPage> createState() => _LibraryPageState();
@@ -55,8 +59,8 @@ class LibraryPage extends StatefulWidget
 class _LibraryPageState extends State<LibraryPage>
 {
   final ScrollController _scrollController = ScrollController();
-  late Future<List<Image>> _futureAlbumCovers;
-  List<Image> _albumCovers = [];
+  late Future<List<Podcast>> _futurePodcastList;
+  List<Podcast> _podcastList = [];
 
   //*******************************************************
 
@@ -64,41 +68,36 @@ class _LibraryPageState extends State<LibraryPage>
   {
     try
     {
-      int podcastNumber = (await _futureAlbumCovers).length;
-      await utilities.updateFeed(podcastNumber, url);
-      utilities.logDebugMsg("$podcastNumber done");
+      Podcast newPodcast = await widget.storageHandler.addPodcast(url);
+      setState(() {
+        _podcastList.add(newPodcast);
+      });
+      logDebugMsg("new podcast added");
+
+      // scroll to the bottom of the list but add a delay to give time for 
+      // the build function to set the size of the grid view
+      Future.delayed(Duration(seconds: 1), () {
+        logDebugMsg("setting scroll");
+        _scrollController.animateTo(_scrollController.position.maxScrollExtent + 1000, 
+          duration: Duration(seconds: 2), curve: Curves.fastOutSlowIn);
+      });
     }
     catch (err)
     {
       // TODO: notify user with a SnackBar?
-      utilities.logDebugMsg("Exception!! ${err.toString()}");
+      logDebugMsg("Exception!! ${err.toString()}");
     }
 
-    setState(() {
-      _futureAlbumCovers = utilities.loadAlbumArt();
-    });
-
-    // scroll to the bottom of the list when the Future completes, but add a delay to give time for 
-    // the build function to set the size of the grid view
-    _futureAlbumCovers.then((value) {
-      utilities.logDebugMsg("future complete, setting scroll after timeout");
-      Future.delayed(Duration(seconds: 1), () {
-        utilities.logDebugMsg("setting scroll");
-        _scrollController.animateTo(_scrollController.position.maxScrollExtent + 1000, 
-          duration: Duration(milliseconds: 500), curve: Curves.linear);
-      });
-    });
-
-    utilities.logDebugMsg("done with _onNewPodcast");
+    logDebugMsg("done with _onNewPodcast");
   }
 
   //*******************************************************
 
   void _onDeletePodcast(int index)
   {
-    utilities.logDebugMsg("_onDeletePodcast($index) called");
+    logDebugMsg("_onDeletePodcast($index) called");
     setState(() {
-      _albumCovers.removeAt(index);
+      _podcastList.removeAt(index);
     });
     // TODO: need to delete it from the filesystem
   }
@@ -108,7 +107,7 @@ class _LibraryPageState extends State<LibraryPage>
   @override
   void initState() {
     super.initState();
-    _futureAlbumCovers = utilities.loadAlbumArt();
+    _futurePodcastList = widget.storageHandler.loadPodcasts();
   }
 
   //*******************************************************
@@ -138,19 +137,22 @@ class _LibraryPageState extends State<LibraryPage>
       ),
       body: Center(
         child: FutureBuilder(
-          future: _futureAlbumCovers,
+          future: _futurePodcastList,
           builder: (context, snapshot) {
             if (snapshot.hasData)
             {
-              _albumCovers = snapshot.data!;
+              // The following line of code is important: after this line runs the two variables will always refer to the same list.
+              // So if I remove an item from _podcastList and call setState then snapshot.data will also see that update.
+              // I verified this with print("${identityHashCode(_podcastList)}") and print("${identityHashCode(snapshot.data)}")
+              _podcastList = snapshot.data!;
               return GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10),
                 controller: _scrollController,
                 padding: EdgeInsets.all(10),
-                itemCount: _albumCovers.length,
+                itemCount: _podcastList.length,
                 itemBuilder: (context, index) {
                   // TODO: show dialog to confirm deletion
-                  return GestureDetector(onLongPress: () => _onDeletePodcast(index), child: _albumCovers[index]);
+                  return GestureDetector(onLongPress: () => _onDeletePodcast(index), child: _podcastList[index].albumArt);
                 }
               );
             }
