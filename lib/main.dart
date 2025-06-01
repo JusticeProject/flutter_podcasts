@@ -105,14 +105,18 @@ class _LibraryPageState extends State<LibraryPage>
 
   //*******************************************************
 
-  void _onDeletePodcast(int index)
+  void _onRemovePodcast(int index)
   {
-    logDebugMsg("_onDeletePodcast($index) called");
+    logDebugMsg("_onRemovePodcast($index) called");
+
     setState(() {
-      _podcastList.removeAt(index);
+      Podcast podcastToRemove = _podcastList.removeAt(index);
+
+      // delete it from the filesystem, it's an async function but we don't need to wait for it to finish
+      widget.storageHandler.removePodcast(podcastToRemove);
     });
-    // TODO: need to delete it from the filesystem
-    // storageHandler.removePodcast() async but don't call await
+
+    logDebugMsg("done with _onRemovePodcast");
   }
 
   //*******************************************************
@@ -165,7 +169,11 @@ class _LibraryPageState extends State<LibraryPage>
                 itemCount: _podcastList.length,
                 itemBuilder: (context, index) {
                   // TODO: show dialog to confirm deletion, use dedicated button for deleting?
-                  return GestureDetector(onLongPress: () => _onDeletePodcast(index), child: _podcastList[index].albumArt);
+                  // TODO: could use GridTile wrapped around InkWell wrapped around image to show an animation when long pressing
+                  return GestureDetector(
+                    onLongPress: () => showRemovePodcastDialog(context, _podcastList[index].title, index, _onRemovePodcast), 
+                    child: _podcastList[index].albumArt
+                  );
                 }
               );
             }
@@ -226,6 +234,35 @@ void showAddPodcastDialog(BuildContext context, void Function(String url) onNewP
                 onNewPodcast(url);
                 Navigator.of(context).pop();
               }
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+//*************************************************************************************************
+
+void showRemovePodcastDialog(BuildContext context, String title, int index, void Function(int index) onRemovePodcast)
+{
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Remove $title from library?"),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text('Remove'),
+            onPressed: () {
+              onRemovePodcast(index);
+              Navigator.of(context).pop();
             },
           ),
         ],

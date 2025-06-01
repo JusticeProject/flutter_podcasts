@@ -74,6 +74,25 @@ class StorageHandler
 
   //*********************************************
 
+  Future<void> removePodcast(Podcast podcast) async
+  {
+    // TODO: what if the files are in use? what if the .mp3 is playing right now? I should stop (all?) playback first
+    // maybe during loading I could remove files/folders that are marked for deletion
+    // or run some background task that periodically tries to remove them
+    // what if folder 10 is the highest numbered folder and it's marked for removal but then user wants to add a podcast at the end of the list?
+
+    try
+    {
+      await Directory(podcast.localDir).delete(recursive: true);
+    }
+    catch (err)
+    {
+      logDebugMsg("Exception in removePodcast: ${err.toString()}");
+    }
+  }
+
+  //*********************************************
+
   Future<void> saveToFile(String filename, Uint8List bytes) async
   {
     File fd = await File(filename).create(recursive: true);
