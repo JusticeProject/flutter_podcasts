@@ -21,7 +21,6 @@ void main()
 class PodcastApp extends StatelessWidget
 {
   PodcastApp({super.key});
-  final StorageHandler storageHandler = StorageHandler();
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   @override
@@ -31,7 +30,7 @@ class PodcastApp extends StatelessWidget
       title: 'Simple Podcasts App',
       scaffoldMessengerKey: _scaffoldMessengerKey,
       theme: ThemeData(colorScheme: ColorScheme.dark()),
-      home: LibraryPage(storageHandler: storageHandler, scaffoldMessengerKey: _scaffoldMessengerKey),
+      home: LibraryPage(scaffoldMessengerKey: _scaffoldMessengerKey),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -43,10 +42,9 @@ class PodcastApp extends StatelessWidget
 
 class LibraryPage extends StatefulWidget
 {
-  const LibraryPage({super.key, required this.storageHandler, required this.scaffoldMessengerKey});
+  const LibraryPage({super.key, required this.scaffoldMessengerKey});
 
   final String title = "Library";
-  final StorageHandler storageHandler;
 
   // this scaffold messenger key is used to show the SnackBar (toast) outside of a build function since otherwise 
   // we would need the BuildContext
@@ -62,6 +60,7 @@ class LibraryPage extends StatefulWidget
 
 class _LibraryPageState extends State<LibraryPage>
 {
+  final StorageHandler _storageHandler = StorageHandler();
   final ScrollController _scrollController = ScrollController();
   late Future<List<Podcast>> _futurePodcastList;
   List<Podcast> _podcastList = [];
@@ -90,7 +89,7 @@ class _LibraryPageState extends State<LibraryPage>
   {
     try
     {
-      Podcast newPodcast = await widget.storageHandler.addPodcast(url);
+      Podcast newPodcast = await _storageHandler.addPodcast(url);
       setState(() {
         _podcastList.add(newPodcast);
       });
@@ -124,7 +123,7 @@ class _LibraryPageState extends State<LibraryPage>
       Podcast podcastToRemove = _podcastList.removeAt(index);
 
       // delete it from the filesystem, it's an async function but we don't need to wait for it to finish
-      widget.storageHandler.removePodcast(podcastToRemove);
+      _storageHandler.removePodcast(podcastToRemove);
     });
 
     logDebugMsg("done with _onRemovePodcast");
@@ -135,7 +134,7 @@ class _LibraryPageState extends State<LibraryPage>
   @override
   void initState() {
     super.initState();
-    _futurePodcastList = widget.storageHandler.loadPodcasts();
+    _futurePodcastList = _storageHandler.loadPodcasts();
   }
 
   //*******************************************************
@@ -181,7 +180,6 @@ class _LibraryPageState extends State<LibraryPage>
                 padding: EdgeInsets.all(10),
                 itemCount: _podcastList.length,
                 itemBuilder: (context, index) {
-                  // TODO: show dialog to confirm deletion, use dedicated button for deleting?
                   // TODO: could use GridTile wrapped around InkWell wrapped around image to show an animation when long pressing
                   return GestureDetector(
                     onLongPress: () => showRemovePodcastDialog(context, _podcastList[index].title, index, _onRemovePodcast), 

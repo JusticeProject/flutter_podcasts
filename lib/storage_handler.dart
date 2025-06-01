@@ -11,11 +11,16 @@ import 'utilities.dart';
 
 //*************************************************************************************************
 
-// TODO: could maybe make this a static singleton with getInstance and private constructor. Then you
-// don't have to pass it around to all the windows/widgets that need to use it.
 class StorageHandler
 {
   int _highestPodcastNumber = -1;
+
+  // Private constructor:
+  StorageHandler._privateConstructor();
+  // the singleton instance of this class:
+  static final StorageHandler _instance = StorageHandler._privateConstructor();
+  // factory that always produces the same singleton instance:
+  factory StorageHandler() {return _instance;}
 
   Future<String> getLocalPath() async
   {
