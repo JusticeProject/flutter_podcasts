@@ -56,6 +56,7 @@ class _LibraryPageState extends State<LibraryPage>
 {
   final ScrollController _scrollController = ScrollController();
   late Future<List<Image>> _futureAlbumCovers;
+  List<Image> _albumCovers = [];
 
   //*******************************************************
 
@@ -73,8 +74,6 @@ class _LibraryPageState extends State<LibraryPage>
       utilities.logDebugMsg("Exception!! ${err.toString()}");
     }
 
-    // TODO: if I delete a podcast and the album art, then it will crash 
-    //because _futureAlbumCovers won't be able to find the files
     setState(() {
       _futureAlbumCovers = utilities.loadAlbumArt();
     });
@@ -91,6 +90,17 @@ class _LibraryPageState extends State<LibraryPage>
     });
 
     utilities.logDebugMsg("done with _onNewPodcast");
+  }
+
+  //*******************************************************
+
+  void _onDeletePodcast(int index)
+  {
+    utilities.logDebugMsg("_onDeletePodcast($index) called");
+    setState(() {
+      _albumCovers.removeAt(index);
+    });
+    // TODO: need to delete it from the filesystem
   }
 
   //*******************************************************
@@ -132,16 +142,16 @@ class _LibraryPageState extends State<LibraryPage>
           builder: (context, snapshot) {
             if (snapshot.hasData)
             {
-              return GridView.count(
+              _albumCovers = snapshot.data!;
+              return GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10),
                 controller: _scrollController,
-                crossAxisCount: 2,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
                 padding: EdgeInsets.all(10),
-                children: [
-                  // TODO: android.permission.READ_EXTERNAL_STORAGE ??
-                  for (var img in snapshot.data!) img
-                ],
+                itemCount: _albumCovers.length,
+                itemBuilder: (context, index) {
+                  // TODO: show dialog to confirm deletion
+                  return GestureDetector(onLongPress: () => _onDeletePodcast(index), child: _albumCovers[index]);
+                }
               );
             }
             else if (snapshot.hasError)

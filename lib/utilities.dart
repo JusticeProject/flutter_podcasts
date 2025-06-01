@@ -47,6 +47,7 @@ Future<String> getLocalPath() async
   //logDebugMsg(directory.path);
   // return directory.path;
 
+  // TODO: android.permission.READ_EXTERNAL_STORAGE ??
   var dir1 = await getApplicationCacheDirectory();
   //logDebugMsg(dir1.path);
   return dir1.path;
