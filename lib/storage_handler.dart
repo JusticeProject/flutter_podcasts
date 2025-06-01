@@ -152,6 +152,10 @@ class StorageHandler
   Future<Uint8List> fetchRSS(String url) async
   {
     final resp = await http.get(Uri.parse(url));
+    if (resp.statusCode ~/ 100 != 2)
+    {
+      throw Exception("Error when fetching RSS at $url: ${resp.statusCode}");
+    }
     return resp.bodyBytes;
   }
 

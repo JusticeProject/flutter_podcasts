@@ -32,6 +32,7 @@ class PodcastApp extends StatelessWidget
       scaffoldMessengerKey: _scaffoldMessengerKey,
       theme: ThemeData(colorScheme: ColorScheme.dark()),
       home: LibraryPage(storageHandler: storageHandler, scaffoldMessengerKey: _scaffoldMessengerKey),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -75,7 +76,17 @@ class _LibraryPageState extends State<LibraryPage>
 
   //*******************************************************
 
-  void _onNewPodcast(String url) async
+  Future<void> _onPopulateLibrary() async
+  {
+    for (String feed in feeds)
+    {
+      await _onNewPodcast(feed);
+    }
+  }
+
+  //*******************************************************
+
+  Future<void> _onNewPodcast(String url) async
   {
     try
     {
@@ -151,6 +162,8 @@ class _LibraryPageState extends State<LibraryPage>
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+        // TODO: for testing only
+        actions: [IconButton(onPressed: _onPopulateLibrary, icon: Icon(Icons.rss_feed))],
       ),
       body: Center(
         child: FutureBuilder(
@@ -192,6 +205,7 @@ class _LibraryPageState extends State<LibraryPage>
         label: Text("Add podcast"),
         //backgroundColor: Colors.white, // specify the color behind the +
         //foregroundColor: colorScheme.onPrimary, // specify the color of the +
+        // TODO: should I disable this button until the existing podcasts are loaded? use another FutureBuilder with the same future?
         onPressed: () => showAddPodcastDialog(context, _onNewPodcast),
         icon: const Icon(Icons.add),
       )
@@ -274,19 +288,20 @@ void showRemovePodcastDialog(BuildContext context, String title, int index, void
 //*************************************************************************************************
 
 // RSS feeds:
-/*
-https://feeds.twit.tv/sn.xml
-https://feeds.twit.tv/uls.xml
-https://feeds.megaphone.fm/gamescoop
-https://feeds.simplecast.com/6WD3bDj7
-https://feeds.simplecast.com/JT6pbPkg
-https://makingembeddedsystems.libsyn.com/rss
-https://talkpython.fm/episodes/rss
-https://www.sciencefriday.com/feed/podcast/science-friday/
-https://feeds.megaphone.fm/ignbeyond
-https://feeds.megaphone.fm/ignunlocked
-https://feeds.megaphone.fm/unfiltered
-https://feeds.megaphone.fm/nvc
-https://feeds.megaphone.fm/kindafunnypodcast
-https://feeds.npr.org/510289/podcast.xml
-*/
+// TODO: remove this
+List<String> feeds = [
+"https://feeds.twit.tv/sn.xml",
+"https://feeds.twit.tv/uls.xml",
+"https://feeds.megaphone.fm/gamescoop",
+"https://feeds.simplecast.com/6WD3bDj7",
+"https://feeds.simplecast.com/JT6pbPkg",
+"https://makingembeddedsystems.libsyn.com/rss",
+"https://talkpython.fm/episodes/rss",
+"https://www.sciencefriday.com/feed/podcast/science-friday/",
+"https://feeds.megaphone.fm/ignbeyond",
+"https://feeds.megaphone.fm/ignunlocked",
+"https://feeds.megaphone.fm/unfiltered",
+"https://feeds.megaphone.fm/nvc",
+"https://feeds.megaphone.fm/kindafunnypodcast",
+"https://feeds.npr.org/510289/podcast.xml",
+];
