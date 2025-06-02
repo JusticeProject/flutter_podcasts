@@ -204,7 +204,7 @@ class _LibraryPageState extends State<LibraryPage>
             }
             else
             {
-              return const CircularProgressIndicator();
+              return Center(child: const CircularProgressIndicator());
             }
           }
         ),
@@ -215,6 +215,7 @@ class _LibraryPageState extends State<LibraryPage>
         //backgroundColor: Colors.white, // specify the color behind the +
         //foregroundColor: colorScheme.onPrimary, // specify the color of the +
         // TODO: should I disable this button until the existing podcasts are loaded? use another FutureBuilder with the same future?
+        // also disable it when in the middle of adding a new podcast
         onPressed: () => showAddPodcastDialog(context, _onNewPodcast),
         icon: const Icon(Icons.add),
       )

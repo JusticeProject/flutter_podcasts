@@ -27,10 +27,9 @@ class PodcastPage extends StatelessWidget
               Container(margin: EdgeInsets.fromLTRB(180, 10, 180, 10), child: podcast.albumArt),
               Text(podcast.title, style: Theme.of(context).textTheme.headlineMedium),
               Text(podcast.author, style: Theme.of(context).textTheme.labelMedium),
-              // TODO: make the description/summary collapsable
               Padding(
                 padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
-                child: Text(podcast.description, textAlign: TextAlign.center),
+                child: CollapsibleText(text: podcast.description),
               ),
               const Divider(),
               const Text("Episode"),
@@ -68,3 +67,40 @@ class PodcastPage extends StatelessWidget
 
 //*************************************************************************************************
 
+class CollapsibleText extends StatefulWidget
+{
+  final String text;
+
+  const CollapsibleText({super.key, required this.text});
+
+  @override
+  State<CollapsibleText> createState() => _CollapsibleTextState();
+}
+
+//*************************************************************************************************
+
+class _CollapsibleTextState extends State<CollapsibleText>
+{
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _isExpanded = !_isExpanded;
+        });
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(widget.text, maxLines: _isExpanded ? null : 2, overflow: TextOverflow.fade, softWrap: true, textAlign: TextAlign.center),
+          if (!_isExpanded)
+            const Text('...More', style: TextStyle(fontWeight: FontWeight.bold)),
+          if (_isExpanded)
+            Center(child: const IconButton(onPressed: null, icon: Icon(Icons.arrow_drop_up)))
+        ],
+      ),
+    );
+  }
+}
