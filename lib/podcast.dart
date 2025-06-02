@@ -21,8 +21,9 @@ class Podcast
 
 class Episode
 {
-  Episode({required this.localPath, required this.title});
+  Episode({required this.localPath, required this.title, required this.description});
 
   final String localPath;
   final String title;
+  final String description;
 }

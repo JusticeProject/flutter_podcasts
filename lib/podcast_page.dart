@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'utilities.dart';
 import 'podcast.dart';
+import 'episode_page.dart';
 
 //*************************************************************************************************
 
@@ -31,9 +33,15 @@ class PodcastPage extends StatelessWidget
                 padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
                 child: CollapsibleText(text: podcast.description),
               ),
-              const Divider(),
               for (var episode in podcast.episodes)
-                Text(episode.title),
+                GestureDetector(
+                  onTap: () =>
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => EpisodePage(episode: episode))),
+                  child:
+                    EpisodePreview(episode: episode)
+                ),
+                // TODO: use a builder for a ListView?
+                // TODO: when EpisodePreview widget is tapped need to navigate to EpisodeDetailPage
             ],
           ),
         ),
@@ -77,6 +85,62 @@ class _CollapsibleTextState extends State<CollapsibleText>
           if (_isExpanded)
             Center(child: const IconButton(onPressed: null, icon: Icon(Icons.arrow_drop_up)))
         ],
+      ),
+    );
+  }
+}
+
+//*************************************************************************************************
+
+class EpisodePreview extends StatelessWidget
+{
+  const EpisodePreview({super.key, required this.episode});
+
+  final Episode episode;
+
+  void _onDownloadEpisode()
+  {
+    // TODO:
+    logDebugMsg("downloading ${episode.title}");
+  }
+
+  void _onPlayEpisode()
+  {
+    // TODO:
+    logDebugMsg("playing ${episode.title}");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(15, 0, 15, 0),
+      height: 150,
+      // the Card is necessary so when the user taps an area that doesn't have text it still navigates to the EpisodePage
+      child: Card(
+        margin: EdgeInsets.all(0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Divider(),
+            Text(episode.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(episode.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const Text("unplayed"),
+                Expanded(child: SizedBox()),
+                IconButton(
+                  onPressed: _onDownloadEpisode,
+                  icon: Icon(Icons.download)
+                ),
+                IconButton(
+                  onPressed: _onPlayEpisode, 
+                  icon: Icon(Icons.play_arrow))
+              ]
+            )
+          ],
+        ),
       ),
     );
   }

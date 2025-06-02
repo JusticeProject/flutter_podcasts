@@ -26,17 +26,36 @@ void main(List<String> args) async
     print(name);
   }*/
 
-  for (int i = 0; i <= 11; i++)
+  for (int i = 0; i < 1; i++)
   {
     String text = await readFile("bin/$i.xml");
     XmlDocument xml = XmlDocument.parse(text);
-    String title = getPodcastTitle(xml);
-    print(title);
-    String imgURL = getImgURLFromXML(xml);
-    print(imgURL);
+    String description = getEpisodeDescription(xml);
+    print(description);
   }
 
   print("main done");
+}
+
+//*************************************************************************************************
+
+String getEpisodeDescription(XmlDocument xml)
+{
+  XmlElement? channel = xml.firstElementChild?.firstElementChild;
+  if (channel != null)
+  {
+    var items = channel.findElements("item");
+    for (var item in items)
+    {
+      XmlElement? description = item.getElement("description");
+      if (description != null)
+      {
+        return description.innerText;
+      }
+    }
+  }
+
+  return "";
 }
 
 //*************************************************************************************************

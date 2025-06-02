@@ -10,6 +10,7 @@ import 'storage_handler.dart';
 
 void main()
 {
+  //debugPaintSizeEnabled = true; // Enables layout lines
   disableCertError();
 
   runApp(PodcastApp());
@@ -258,6 +259,8 @@ class PodcastPreview extends StatelessWidget
 
 void showAddPodcastDialog(BuildContext context, void Function(String url) onNewPodcast)
 {
+  // TODO: show this dialog near the top since it appears in the middle of the screen, then
+  // when the keyboard appears it moves up, eliminate this movement by starting it at the top
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -358,6 +361,7 @@ List<String> feeds = [
 
 // Library page:
 // Refresh, drag down on main Library page
+// no auto downloads? no auto refresh?
 
 // if user rotates the phone to landscape then
 // if MediaQuery.sizeOf(context).width > height or
@@ -382,8 +386,10 @@ List<String> feeds = [
 
 // Data Storage:
 
+// separate the storage vs network functions?
 // For each subscription save for offline usage:
 // url and date last retrieved in a .txt file
+// if date in local xml is same as date in remote xml then don't save to disk
 // albumArt
 // entire xml file?
 
@@ -392,7 +398,11 @@ List<String> feeds = [
 // Audio player:
 
 // audio player at bottom of each page
-// audio library: https://pub.dev/packages/just_audio
-// audio only, no video
+// Ask gemini to create an app that plays .mp3 files with buttons for play, pause, skip ahead 30 seconds, go back 10 seconds
+
+// audio packages:
+// https://pub.dev/packages/audioplayers
+// https://pub.dev/packages/just_audio
+// audio only, no video, how do I handle it if user enters rss feed that only has videos?
 // stops playing when headphones removed
 // audio player shows on lockscreen

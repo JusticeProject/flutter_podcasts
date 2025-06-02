@@ -119,10 +119,10 @@ class StorageHandler
 
   String getImgURLFromXML(XmlDocument xml)
   {
-    XmlElement? rss = xml.getElement("rss");
-    XmlElement? channel = rss?.getElement("channel");
+    // first element is <rss> then second element is <channel>
+    XmlElement? channel = xml.firstElementChild?.firstElementChild;
 
-    // try the image element first
+    // try the <image> element first
     XmlElement? image = channel?.getElement("image");
     XmlElement? url = image?.getElement("url");
     if (url != null)
@@ -130,7 +130,7 @@ class StorageHandler
       return url.innerText;
     }
     
-    // next try the itunes:image element
+    // next try the <itunes:image> element
     image = channel?.getElement("itunes:image");
     if (image != null)
     {
@@ -144,9 +144,12 @@ class StorageHandler
 
   String getPodcastTitle(XmlDocument xml)
   {
-    // TODO: speed up this and the other functions with firstElementChild
-    XmlElement? rss = xml.getElement("rss");
-    XmlElement? channel = rss?.getElement("channel");
+    // this is a slower version of getting the channel element
+    //XmlElement? rss = xml.getElement("rss");
+    //XmlElement? channel = rss?.getElement("channel");
+
+    // this is a faster version of getting the channel element
+    XmlElement? channel = xml.firstElementChild?.firstElementChild;
     XmlElement? title = channel?.getElement("title");
     if (title != null)
     {
@@ -160,8 +163,8 @@ class StorageHandler
 
   String getPodcastAuthor(XmlDocument xml)
   {
-    XmlElement? rss = xml.getElement("rss");
-    XmlElement? channel = rss?.getElement("channel");
+    // first element is <rss> then second element is <channel>
+    XmlElement? channel = xml.firstElementChild?.firstElementChild;
     XmlElement? author = channel?.getElement("itunes:author");
     if (author != null)
     {
@@ -175,14 +178,13 @@ class StorageHandler
 
   String getPodcastDescription(XmlDocument xml)
   {
-    XmlElement? rss = xml.getElement("rss");
-    XmlElement? channel = rss?.getElement("channel");
+    // first element is <rss> then second element is <channel>
+    XmlElement? channel = xml.firstElementChild?.firstElementChild;
     XmlElement? description = channel?.getElement("description");
     if (description != null)
     {
       // TODO: need to remove some xml/html tags that appear like in Planet Money's description: <em> </em> <br>
-      // or is there a Text widget that will render them correctly? Planet Money also has paid subscription so
-      // how do I ignore those episodes behind a paywall?
+      // or is there a Text widget that will render them correctly? this also shows up in Episode descriptions
       return description.innerText;
     }
 
@@ -193,8 +195,7 @@ class StorageHandler
 
   List<Episode> getEpisodes(XmlDocument xml)
   {
-    // TODO: only get the 10 most recent episodes? some feeds have ALL the episodes
-    // what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode?
+    // TODO: some podcasts like Planet Money have paid subscriptions with extra episodes, how do I ignore the episodes behind a paywall?
     
     XmlElement? channel = xml.firstElementChild?.firstElementChild;
     if (channel != null)
@@ -204,9 +205,17 @@ class StorageHandler
       for (var item in items)
       {
         XmlElement? title = item.getElement("title");
-        if (title != null)
+        XmlElement? description = item.getElement("description");
+        if (title != null && description != null)
         {
-          episodes.add(Episode(localPath: "", title: title.innerText));
+          episodes.add(Episode(localPath: "", title: title.innerText, description: description.innerText));
+        }
+
+        // TODO: only get the 10 most recent episodes? some feeds have ALL the episodes
+        // what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode? should I delete the 11th episode?
+        if (episodes.length >= 10)
+        {
+          break;
         }
       }
       return episodes;
