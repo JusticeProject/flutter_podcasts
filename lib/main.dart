@@ -176,9 +176,14 @@ class _LibraryPageState extends State<LibraryPage>
               // I verified this with print("${identityHashCode(_podcastList)}") and print("${identityHashCode(snapshot.data)}")
               _podcastList = snapshot.data!;
               return GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, 
+                  mainAxisSpacing: 20, 
+                  crossAxisSpacing: 18,
+                  childAspectRatio: 0.8, // changes it from square to rectangular, with more space vertically for the text below the albumArt
+                ),
                 controller: _scrollController,
-                padding: EdgeInsets.all(10),
+                padding: EdgeInsets.all(18),
                 itemCount: _podcastList.length,
                 itemBuilder: (context, index) {
                   // TODO: could use GridTile wrapped around InkWell wrapped around image to show an animation when long pressing
@@ -188,7 +193,7 @@ class _LibraryPageState extends State<LibraryPage>
                       Navigator.push(context, MaterialPageRoute(builder: (context) => PodcastPage(podcast: _podcastList[index]))),
                     onLongPress: () => 
                       showRemovePodcastDialog(context, _podcastList[index].title, index, _onRemovePodcast), 
-                    child: _podcastList[index].albumArt
+                    child: PodcastPreview(podcast: _podcastList[index])
                   );
                 }
               );
@@ -214,6 +219,31 @@ class _LibraryPageState extends State<LibraryPage>
       )
     );
   }
+}
+
+//*************************************************************************************************
+
+class PodcastPreview extends StatelessWidget
+{
+  const PodcastPreview({super.key, required this.podcast});
+
+  final Podcast podcast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        podcast.albumArt,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 8, 0, 6),
+          child: Text(podcast.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        Text("${podcast.numEpisodesDownloaded} episode${podcast.numEpisodesDownloaded == 1 ? '' : 's'}")
+      ],
+    );
+  }
+  
 }
 
 //*************************************************************************************************
