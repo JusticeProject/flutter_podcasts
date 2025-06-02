@@ -165,7 +165,7 @@ class _LibraryPageState extends State<LibraryPage>
         // TODO: for testing only
         actions: [IconButton(onPressed: _onPopulateLibrary, icon: Icon(Icons.rss_feed))],
       ),
-      body: Center(
+      body: SafeArea(
         child: FutureBuilder(
           future: _futurePodcastList,
           builder: (context, snapshot) {
@@ -235,11 +235,18 @@ class PodcastPreview extends StatelessWidget
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         podcast.albumArt,
-        Padding(
-          padding: const EdgeInsets.fromLTRB(0, 8, 0, 6),
+        // TODO: it would be nice to display the title too, but due to the unforseen lengths this can cause out of bounds issues
+        /*Padding(
+          padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
           child: Text(podcast.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ),*/
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+          child: Text(
+            "${podcast.numEpisodesDownloaded} episode${podcast.numEpisodesDownloaded == 1 ? '' : 's'}",
+            style: const TextStyle(fontWeight: FontWeight.bold)
+          ),
         ),
-        Text("${podcast.numEpisodesDownloaded} episode${podcast.numEpisodesDownloaded == 1 ? '' : 's'}")
       ],
     );
   }

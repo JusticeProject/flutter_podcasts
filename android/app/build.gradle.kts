@@ -8,7 +8,10 @@ plugins {
 android {
     namespace = "com.oarworks.flutter_podcasts"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // this was:
+    // ndkVersion = flutter.ndkVersion
+    // but the build system told me to change it to this:
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
