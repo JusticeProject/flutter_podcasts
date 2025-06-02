@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 
 class Podcast
 {
-  Podcast(this.localDir, this.title, this.albumArt);
+  Podcast(this.localDir, this.title, this.author, this.description, this.albumArt);
   
   final String localDir;
   final String title;
+  final String author;
+  final String description;
   final Image albumArt;
   int numEpisodesDownloaded = 0;
 

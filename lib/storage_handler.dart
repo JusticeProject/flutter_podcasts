@@ -66,8 +66,10 @@ class StorageHandler
       await saveToFile(imgFilename, imgBytes);
 
       String title = getPodcastTitle(xml);
+      String author = getPodcastAuthor(xml);
+      String description = getPodcastDescription(xml);
       logDebugMsg("found title $title");
-      return Podcast(localDir, title, Image.file(File(imgFilename)));
+      return Podcast(localDir, title, author, description, Image.file(File(imgFilename)));
     }
     catch (err)
     {
@@ -154,6 +156,34 @@ class StorageHandler
 
   //*********************************************
 
+  String getPodcastAuthor(XmlDocument xml)
+  {
+    var elements = xml.findAllElements("itunes:author");
+    if (elements.isNotEmpty)
+    {
+      return elements.first.innerText;
+    }
+
+    throw Exception("could not find author in xml");
+  }
+
+  //*********************************************
+
+    String getPodcastDescription(XmlDocument xml)
+  {
+    var elements = xml.findAllElements("description");
+    if (elements.isNotEmpty)
+    {
+      // TODO: need to remove some xml/html tags that appear like in Planety Money's description: <em> </em> <br>
+      // or is there a Text widget that will render them correctly?
+      return elements.first.innerText;
+    }
+
+    throw Exception("could not find description in xml");
+  }
+
+  //*********************************************
+
   Future<Uint8List> fetchRSS(String url) async
   {
     final resp = await http.get(Uri.parse(url));
@@ -180,17 +210,23 @@ class StorageHandler
     var dir = Directory(path);
     var itemStream = dir.list();
 
+    // TODO: need a try/catch here, it may not have been caught in addPodcast because the new xml was downloaded later which is missing info
+
     List<Podcast> podcastList = [];
     await for (var item in itemStream)
     {
       if (item is Directory)
       {
+        // TODO: move this to a separate function that takes in xml and returns Podcast instance, I don't want to duplicate
+        // code here and in addPodcast
         String xmlFilename = "${item.path}${Platform.pathSeparator}feed.xml";
         String text = await readFile(xmlFilename);
         XmlDocument xml = XmlDocument.parse(text);
         String title = getPodcastTitle(xml);
+        String author = getPodcastAuthor(xml);
+        String description = getPodcastDescription(xml);
         String albumArtPath = "${item.path}${Platform.pathSeparator}albumArt.jpg";
-        podcastList.add(Podcast(item.path, title, Image.file(File(albumArtPath))));
+        podcastList.add(Podcast(item.path, title, author, description, Image.file(File(albumArtPath))));
       }
     }
 

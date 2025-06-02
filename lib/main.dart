@@ -209,6 +209,7 @@ class _LibraryPageState extends State<LibraryPage>
           }
         ),
       ),
+      // TODO: can I dynamically switch from extended to regular FloatingAction button? the extended covers up the bottom podcast text
       floatingActionButton: FloatingActionButton.extended(
         label: Text("Add podcast"),
         //backgroundColor: Colors.white, // specify the color behind the +

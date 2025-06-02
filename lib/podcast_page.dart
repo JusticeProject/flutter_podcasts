@@ -22,9 +22,17 @@ class PodcastPage extends StatelessWidget
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(margin: EdgeInsets.all(10), child: podcast.albumArt),
-              // TODO: show title and summary, should some of it overlap with the albumArt using a Stack()?
+              Container(margin: EdgeInsets.fromLTRB(180, 10, 180, 10), child: podcast.albumArt),
+              Text(podcast.title, style: Theme.of(context).textTheme.headlineMedium),
+              Text(podcast.author, style: Theme.of(context).textTheme.labelMedium),
+              // TODO: make the description/summary collapsable
+              Padding(
+                padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
+                child: Text(podcast.description, textAlign: TextAlign.center),
+              ),
+              const Divider(),
               const Text("Episode"),
               const Divider(),
               const Text("Episode"),
