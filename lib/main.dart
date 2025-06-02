@@ -186,7 +186,6 @@ class _LibraryPageState extends State<LibraryPage>
                 padding: EdgeInsets.all(18),
                 itemCount: _podcastList.length,
                 itemBuilder: (context, index) {
-                  // TODO: could use GridTile wrapped around InkWell wrapped around image to show an animation when long pressing
                   // TODO: show number of episodes downloaded below each album art
                   return GestureDetector(
                     onTap: () => 

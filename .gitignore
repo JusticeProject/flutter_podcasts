@@ -44,3 +44,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Test/experimentation code related
+test_dart/bin/*.jpg
+test_dart/bin/*.xml

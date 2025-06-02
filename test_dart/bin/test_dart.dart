@@ -20,10 +20,20 @@ class MyHttpOverrides extends HttpOverrides{
 
 void main(List<String> args) async
 {
-  List<String> names = await loadAllAlbumArt();
+  /*List<String> names = await loadAllAlbumArt();
   for (var name in names)
   {
     print(name);
+  }*/
+
+  for (int i = 0; i <= 11; i++)
+  {
+    String text = await readFile("bin/$i.xml");
+    XmlDocument xml = XmlDocument.parse(text);
+    String title = getPodcastTitle(xml);
+    print(title);
+    String imgURL = getImgURLFromXML(xml);
+    print(imgURL);
   }
 
   print("main done");
@@ -149,24 +159,21 @@ Future<String> readFile(String filename) async
 
 String getImgURLFromXML(XmlDocument xml)
 {
-  var elements = xml.findAllElements("image");
-  if (elements.isNotEmpty)
-  {
-    var urls = elements.first.findElements("url");
-    if (urls.isNotEmpty)
-    {
-      return urls.first.innerText;
-    }
-  }
+  XmlElement? rss = xml.getElement("rss");
+  XmlElement? channel = rss?.getElement("channel");
 
-  elements = xml.findAllElements("itunes:image");
-  if (elements.isNotEmpty)
+
+  XmlElement? image = channel?.getElement("image");
+  XmlElement? url = image?.getElement("url");
+  if (url != null)
   {
-    var first = elements.first;
-    if (first.attributes.isNotEmpty)
-    {
-      return first.attributes.first.value;
-    }
+    return url.innerText;
+  }
+  
+  image = channel?.getElement("itunes:image");
+  if (image != null)
+  {
+    return image.attributes.first.value;
   }
 
   throw Exception("could not find image url in xml");
@@ -176,10 +183,12 @@ String getImgURLFromXML(XmlDocument xml)
 
 String getPodcastTitle(XmlDocument xml)
 {
-  var elements = xml.findAllElements("title");
-  if (elements.isNotEmpty)
+  XmlElement? rss = xml.getElement("rss");
+  XmlElement? channel = rss?.getElement("channel");
+  XmlElement? title = channel?.getElement("title");
+  if (title != null)
   {
-    return elements.first.innerText;
+    return title.innerText;  
   }
 
   throw Exception("could not find title in xml");

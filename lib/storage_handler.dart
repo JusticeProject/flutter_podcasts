@@ -69,7 +69,8 @@ class StorageHandler
       String author = getPodcastAuthor(xml);
       String description = getPodcastDescription(xml);
       logDebugMsg("found title $title");
-      return Podcast(localDir, title, author, description, Image.file(File(imgFilename)));
+      List<Episode> episodes = getEpisodes(xml);
+      return Podcast(localDir, title, author, description, Image.file(File(imgFilename)), episodes);
     }
     catch (err)
     {
@@ -118,24 +119,22 @@ class StorageHandler
 
   String getImgURLFromXML(XmlDocument xml)
   {
-    var elements = xml.findAllElements("image");
-    if (elements.isNotEmpty)
-    {
-      var urls = elements.first.findElements("url");
-      if (urls.isNotEmpty)
-      {
-        return urls.first.innerText;
-      }
-    }
+    XmlElement? rss = xml.getElement("rss");
+    XmlElement? channel = rss?.getElement("channel");
 
-    elements = xml.findAllElements("itunes:image");
-    if (elements.isNotEmpty)
+    // try the image element first
+    XmlElement? image = channel?.getElement("image");
+    XmlElement? url = image?.getElement("url");
+    if (url != null)
     {
-      var first = elements.first;
-      if (first.attributes.isNotEmpty)
-      {
-        return first.attributes.first.value;
-      }
+      return url.innerText;
+    }
+    
+    // next try the itunes:image element
+    image = channel?.getElement("itunes:image");
+    if (image != null)
+    {
+      return image.attributes.first.value;
     }
 
     throw Exception("could not find image url in xml");
@@ -145,10 +144,13 @@ class StorageHandler
 
   String getPodcastTitle(XmlDocument xml)
   {
-    var elements = xml.findAllElements("title");
-    if (elements.isNotEmpty)
+    // TODO: speed up this and the other functions with firstElementChild
+    XmlElement? rss = xml.getElement("rss");
+    XmlElement? channel = rss?.getElement("channel");
+    XmlElement? title = channel?.getElement("title");
+    if (title != null)
     {
-      return elements.first.innerText;
+      return title.innerText;  
     }
 
     throw Exception("could not find title in xml");
@@ -158,10 +160,12 @@ class StorageHandler
 
   String getPodcastAuthor(XmlDocument xml)
   {
-    var elements = xml.findAllElements("itunes:author");
-    if (elements.isNotEmpty)
+    XmlElement? rss = xml.getElement("rss");
+    XmlElement? channel = rss?.getElement("channel");
+    XmlElement? author = channel?.getElement("itunes:author");
+    if (author != null)
     {
-      return elements.first.innerText;
+      return author.innerText;
     }
 
     throw Exception("could not find author in xml");
@@ -169,17 +173,47 @@ class StorageHandler
 
   //*********************************************
 
-    String getPodcastDescription(XmlDocument xml)
+  String getPodcastDescription(XmlDocument xml)
   {
-    var elements = xml.findAllElements("description");
-    if (elements.isNotEmpty)
+    XmlElement? rss = xml.getElement("rss");
+    XmlElement? channel = rss?.getElement("channel");
+    XmlElement? description = channel?.getElement("description");
+    if (description != null)
     {
-      // TODO: need to remove some xml/html tags that appear like in Planety Money's description: <em> </em> <br>
-      // or is there a Text widget that will render them correctly?
-      return elements.first.innerText;
+      // TODO: need to remove some xml/html tags that appear like in Planet Money's description: <em> </em> <br>
+      // or is there a Text widget that will render them correctly? Planet Money also has paid subscription so
+      // how do I ignore those episodes behind a paywall?
+      return description.innerText;
     }
 
     throw Exception("could not find description in xml");
+  }
+
+  //*********************************************
+
+  List<Episode> getEpisodes(XmlDocument xml)
+  {
+    // TODO: only get the 10 most recent episodes? some feeds have ALL the episodes
+    // what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode?
+    
+    XmlElement? channel = xml.firstElementChild?.firstElementChild;
+    if (channel != null)
+    {
+      var items = channel.findElements("item");
+      List<Episode> episodes = [];
+      for (var item in items)
+      {
+        XmlElement? title = item.getElement("title");
+        if (title != null)
+        {
+          episodes.add(Episode(localPath: "", title: title.innerText));
+        }
+      }
+      return episodes;
+    }
+
+    // TODO: throw Exception or return empty List?
+    throw Exception("could not find episodes");
   }
 
   //*********************************************
@@ -211,6 +245,7 @@ class StorageHandler
     var itemStream = dir.list();
 
     // TODO: need a try/catch here, it may not have been caught in addPodcast because the new xml was downloaded later which is missing info
+    // But then I won't be able to display the episodes, should I keep a backup of the old xml file?
 
     List<Podcast> podcastList = [];
     await for (var item in itemStream)
@@ -226,7 +261,10 @@ class StorageHandler
         String author = getPodcastAuthor(xml);
         String description = getPodcastDescription(xml);
         String albumArtPath = "${item.path}${Platform.pathSeparator}albumArt.jpg";
-        podcastList.add(Podcast(item.path, title, author, description, Image.file(File(albumArtPath))));
+        List<Episode> episodes = getEpisodes(xml);
+        podcastList.add(
+          Podcast(item.path, title, author, description, Image.file(File(albumArtPath)), episodes)
+        );
       }
     }
 
