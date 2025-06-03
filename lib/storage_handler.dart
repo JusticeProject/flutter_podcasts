@@ -183,11 +183,7 @@ class StorageHandler
     XmlElement? description = channel?.getElement("description");
     if (description != null)
     {
-      // TODO: need to remove some html tags that appear like in Planet Money's description: <em> </em> <br>
-      // or is there a Text widget that will render them correctly? this also shows up in Episode descriptions
-      // RegExp re = RegExp(r"<.*?>"); // add the dotAll option
-      // String result = html.replaceAll(re, "");
-      return description.innerText;
+      return removeHtmlTags(description.innerText);
     }
 
     throw Exception("could not find description in xml");
@@ -210,7 +206,10 @@ class StorageHandler
         XmlElement? description = item.getElement("description");
         if (title != null && description != null)
         {
-          episodes.add(Episode(localPath: "", title: title.innerText, description: description.innerText));
+          String descriptionNoHtml = removeHtmlTags(description.innerText);
+          episodes.add(Episode(
+            localPath: "", title: title.innerText, description: description.innerText, descriptionNoHtml: descriptionNoHtml)
+          );
         }
 
         // TODO: only get the 10 most recent episodes? some feeds have ALL the episodes
@@ -225,6 +224,19 @@ class StorageHandler
 
     // TODO: throw Exception or return empty List?
     throw Exception("could not find episodes");
+  }
+
+  //*********************************************
+
+  String removeHtmlTags(String input)
+  {
+    // . means wildcard
+    // dotAll means the wildcard . will match all characters including line terminators
+    // *? means non-greedy version of * (* means 0 or more)
+    // .*? means 0 or more of any char, it will match the least amount of chars
+    RegExp re = RegExp(r"<.*?>", dotAll: true);
+    String result = input.replaceAll(re, "");
+    return result.trim();
   }
 
   //*********************************************

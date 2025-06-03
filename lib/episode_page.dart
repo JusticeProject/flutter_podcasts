@@ -26,12 +26,17 @@ class EpisodePage extends StatelessWidget
         bool canLaunch = await canLaunchUrl(uri);
         if (canLaunch)
         {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          logDebugMsg("can launch");
+          await launchUrl(uri, mode: LaunchMode.platformDefault);
+        }
+        else
+        {
+          logDebugMsg("can't launch");
         }
       }
       catch (err)
       {
-        logDebugMsg(err.toString());
+        logDebugMsg("caught exception: ${err.toString()}");
       }
     }
   }
