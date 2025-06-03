@@ -14,6 +14,19 @@ class EpisodePage extends StatelessWidget
 
   //*******************************************************
 
+  // TODO: Audio player:
+
+  // audio player at bottom of each page
+  // Persistent bottom sheets can be created and displayed with the [showBottomSheet] function or the [ScaffoldState.showBottomSheet] method.
+  // Ask gemini to create an app that plays .mp3 files with buttons for play, pause, skip ahead 30 seconds, go back 10 seconds
+
+  // audio packages:
+  // https://pub.dev/packages/audioplayers
+  // https://pub.dev/packages/just_audio
+  // audio only, no video, how do I handle it if user enters rss feed that only has videos?
+  // stops playing when headphones removed
+  // audio player shows on lockscreen
+
   void _onLinkTapped(String? url) async
   {
     if (url != null)

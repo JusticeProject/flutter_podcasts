@@ -149,6 +149,15 @@ class _LibraryPageState extends State<LibraryPage>
 
   //*******************************************************
 
+  // TODO: Refresh, drag down on main Library page
+  // TODO: no auto downloads? no auto refresh?
+
+  // TODO: if user rotates the phone to landscape then
+  // if MediaQuery.sizeOf(context).width > height or
+  // > 1000 then use more grid count,
+  // or wrap with a LayoutBuilder which provides the context/constraints
+  // or Display class https://api.flutter.dev/flutter/dart-ui/Display-class.html
+
   @override
   Widget build(BuildContext context)
   {
@@ -339,7 +348,7 @@ void showRemovePodcastDialog(BuildContext context, String title, int index, void
 //*************************************************************************************************
 
 // RSS feeds:
-// TODO: remove this
+// TODO: remove these sample feeds
 List<String> feeds = [
 "https://feeds.twit.tv/sn.xml",
 "https://feeds.twit.tv/uls.xml",
@@ -357,61 +366,3 @@ List<String> feeds = [
 "https://feeds.megaphone.fm/kindafunnypodcast",
 "https://feeds.npr.org/510289/podcast.xml",
 ];
-
-
-
-// TODO list:
-
-// General:
-// use const Widget whenever possible to reduce screen rebuild time
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-// Library page:
-// Refresh, drag down on main Library page
-// no auto downloads? no auto refresh?
-
-// if user rotates the phone to landscape then
-// if MediaQuery.sizeOf(context).width > height or
-// > 1000 then use more grid count,
-// or wrap with a LayoutBuilder which provides the context/constraints
-// or Display class https://api.flutter.dev/flutter/dart-ui/Display-class.html
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-// Podcast Page:
-// Refresh, drag down?
-// ListView?
-// ListTile or custom widget?
-// IconButton(Icons.download, size: , color:), will download or remove
-// Play button
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-// Episode Page:
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-// Data Storage:
-
-// separate the storage vs network functions?
-// For each subscription save for offline usage:
-// url and date last retrieved in a .txt file
-// if date in local xml is same as date in remote xml then don't save to disk
-// albumArt
-// entire xml file?
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-// Audio player:
-
-// audio player at bottom of each page
-// Persistent bottom sheets can be created and displayed with the [showBottomSheet] function or the [ScaffoldState.showBottomSheet] method.
-// Ask gemini to create an app that plays .mp3 files with buttons for play, pause, skip ahead 30 seconds, go back 10 seconds
-
-// audio packages:
-// https://pub.dev/packages/audioplayers
-// https://pub.dev/packages/just_audio
-// audio only, no video, how do I handle it if user enters rss feed that only has videos?
-// stops playing when headphones removed
-// audio player shows on lockscreen

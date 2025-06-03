@@ -73,6 +73,15 @@ class StorageHandler
 
   //*********************************************
 
+  // TODO: need updatePodcastFeed()
+  // For each subscription save for offline usage:
+  // url and date last retrieved in a .txt file
+  // if date in local xml is same as date in remote xml then don't save to disk
+  // albumArt
+  // entire xml file
+
+  //*********************************************
+
   Future<void> removePodcast(Podcast podcast) async
   {
     // TODO: what if the files are in use? what if the .mp3 is playing right now? I should stop (all?) playback first
@@ -307,6 +316,8 @@ class StorageHandler
   //*********************************************
   //*********************************************
   //*********************************************
+
+  // TODO: separate the storage vs network functions?
 
   Future<Uint8List> fetchRSS(String url) async
   {

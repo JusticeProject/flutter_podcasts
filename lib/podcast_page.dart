@@ -11,6 +11,8 @@ class PodcastPage extends StatelessWidget
 
   final Podcast podcast;
 
+  // TODO: Refresh, drag down on PodcastPage?
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,13 +101,13 @@ class EpisodePreview extends StatelessWidget
 
   void _onDownloadEpisode()
   {
-    // TODO:
+    // TODO: implement downloading (or removing if already downloaded)
     logDebugMsg("downloading ${episode.title}");
   }
 
   void _onPlayEpisode()
   {
-    // TODO:
+    // TODO: implement playing / pausing episode
     logDebugMsg("playing ${episode.title}");
   }
 
