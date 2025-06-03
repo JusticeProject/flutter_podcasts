@@ -66,7 +66,7 @@ class _LibraryPageState extends State<LibraryPage>
   final ScrollController _scrollController = ScrollController();
   late Future<List<Podcast>> _futurePodcastList;
   List<Podcast> _podcastList = [];
-  bool _refreshingLibrary = true;
+  bool _isRefreshing = true;
 
   //*******************************************************
 
@@ -81,7 +81,7 @@ class _LibraryPageState extends State<LibraryPage>
   Future<void> _onPopulateLibrary() async
   {
     setState(() {
-      _refreshingLibrary = true;
+      _isRefreshing = true;
     });
 
     for (String feed in feeds)
@@ -90,7 +90,7 @@ class _LibraryPageState extends State<LibraryPage>
     }
 
     setState(() {
-      _refreshingLibrary = false;
+      _isRefreshing = false;
     });
   }
 
@@ -100,7 +100,7 @@ class _LibraryPageState extends State<LibraryPage>
   {
     setState(() {
       // disable the Add podcast button
-      _refreshingLibrary = true;
+      _isRefreshing = true;
     });
 
     try
@@ -128,7 +128,7 @@ class _LibraryPageState extends State<LibraryPage>
 
     setState(() {
       // re-enable the Add podcast button
-      _refreshingLibrary = false;
+      _isRefreshing = false;
     });
 
     logDebugMsg("done with _onNewPodcast");
@@ -152,10 +152,45 @@ class _LibraryPageState extends State<LibraryPage>
 
   //*******************************************************
 
+  Future<void> _onRefresh()
+  {
+    logDebugMsg("_onRefresh triggered");
+
+    setState(() {
+      _isRefreshing = true;
+      _futurePodcastList = _storageHandler.loadPodcasts();
+    });
+
+    // TODO: no auto downloads? no auto refresh?
+    
+    // when our podcastList has been loaded we grab the list and re-enable the buttons
+    _futurePodcastList.then((value) {
+      setState(() {
+        _podcastList = value;
+        _isRefreshing = false;
+      });
+    });
+
+    // calling this function will create a Future, that Future completes when the _futurePodcastList Future has completed
+    Future<void> convertFuture() async
+    {
+      await _futurePodcastList;
+      Future<void> newFuture = Future.value(); // this newFuture completes right away when it reaches this line
+      return newFuture;
+    }
+
+    // we aren't calling await on this convertedFuture, whoever does await it will be stuck inside convertFuture()
+    // on the line "await _futurePodcastList" for a few seconds
+    Future<void> convertedFuture = convertFuture();
+    return convertedFuture;
+  }
+
+  //*******************************************************
+
   @override
   void initState() {
     super.initState();
-    _refreshingLibrary = true; // disable the Add podcast button until we are finishing loading
+    _isRefreshing = true; // disable the Add podcast button until we are finishing loading
     _futurePodcastList = _storageHandler.loadPodcasts();
 
     // It's ok to register a .then() callback even though the FutureBuilder will also use the Future.
@@ -165,7 +200,7 @@ class _LibraryPageState extends State<LibraryPage>
       setState(() {
         // setting _podcastList here is redundant but I don't know which one will be called first: here or the FutureBuilder
         _podcastList = value;
-        _refreshingLibrary = false; // enable the Add podcast button now that _podcastList has been set
+        _isRefreshing = false; // enable the Add podcast button now that _podcastList has been set
       });
     });
   }
@@ -179,9 +214,6 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   //*******************************************************
-
-  // TODO: Refresh, drag down on main Library page, be sure to use setState(_refreshingLibrary)
-  // TODO: no auto downloads? no auto refresh?
 
   // TODO: if user rotates the phone to landscape then
   // if MediaQuery.sizeOf(context).width > height or
@@ -216,25 +248,30 @@ class _LibraryPageState extends State<LibraryPage>
               // So if I remove an item from _podcastList and call setState then snapshot.data will also see that update.
               // I verified this with print("${identityHashCode(_podcastList)}") and print("${identityHashCode(snapshot.data)}")
               _podcastList = snapshot.data!;
-              return GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, 
-                  mainAxisSpacing: 20, 
-                  crossAxisSpacing: 18,
-                  childAspectRatio: 0.8, // changes it from square to rectangular, with more space vertically for the text below the albumArt
+              return RefreshIndicator(
+                onRefresh: () => _onRefresh(),
+                child: GridView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(), // this ensures you can drag down to refresh even if the library is too small to scroll
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, 
+                    mainAxisSpacing: 20, 
+                    crossAxisSpacing: 18,
+                    childAspectRatio: 0.8, // changes it from square to rectangular, with more space vertically for the text below the albumArt
+                  ),
+                  controller: _scrollController,
+                  padding: EdgeInsets.all(18),
+                  itemCount: _podcastList.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      // disable tapping on each albumArt while refreshing
+                      onTap: _isRefreshing ? null : () => 
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => PodcastPage(podcast: _podcastList[index]))),
+                      onLongPress: _isRefreshing ? null : () => 
+                        showRemovePodcastDialog(context, _podcastList[index].title, index, _onRemovePodcast), 
+                      child: PodcastPreview(podcast: _podcastList[index])
+                    );
+                  }
                 ),
-                controller: _scrollController,
-                padding: EdgeInsets.all(18),
-                itemCount: _podcastList.length,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () => 
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => PodcastPage(podcast: _podcastList[index]))),
-                    onLongPress: () => 
-                      showRemovePodcastDialog(context, _podcastList[index].title, index, _onRemovePodcast), 
-                    child: PodcastPreview(podcast: _podcastList[index])
-                  );
-                }
               );
             }
             else if (snapshot.hasError)
@@ -252,7 +289,7 @@ class _LibraryPageState extends State<LibraryPage>
       floatingActionButton: FloatingActionButton.extended(
         label: Text("Add podcast"),
         // we disable the Add Podcast button when the library of podcasts is loading or already adding a new one
-        onPressed: _refreshingLibrary ? null : () => showAddPodcastDialog(context, _onNewPodcast),
+        onPressed: _isRefreshing ? null : () => showAddPodcastDialog(context, _onNewPodcast),
         icon: const Icon(Icons.add),
       )
     );
