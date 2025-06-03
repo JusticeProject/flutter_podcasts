@@ -22,27 +22,18 @@ class StorageHandler
   // factory that always produces the same singleton instance:
   factory StorageHandler() {return _instance;}
 
+  //*********************************************
+
   Future<String> getLocalPath() async
   {
-    //final directory = await getApplicationDocumentsDirectory();
-    //logDebugMsg(directory.path);
-    // return directory.path;
-
-    // TODO: android.permission.READ_EXTERNAL_STORAGE ?? if windows use this func but if android use which?
+    // TODO: android.permission.READ_EXTERNAL_STORAGE ??
     var dir1 = await getApplicationCacheDirectory();
     //logDebugMsg(dir1.path);
     return dir1.path;
-
-    //var dir2 = await getApplicationSupportDirectory();
-    //print(dir2.path);
-    //var dir3 = await getExternalStorageDirectory();
-    //print(dir3?.path);
-    //var dir4 = await getExternalStorageDirectories();
-    //print(dir4);
-    //var dir5 = await getExternalCacheDirectories();
-    //print(dir5);
   }
 
+  //*********************************************
+  //*********************************************
   //*********************************************
 
   Future<Podcast> addPodcast(String url) async
@@ -101,6 +92,71 @@ class StorageHandler
 
   //*********************************************
 
+  Future<List<Podcast>> loadPodcasts() async
+  {
+    var path = await getLocalPath();
+    var dir = Directory(path);
+    var itemStream = dir.list();
+
+    // TODO: need a try/catch here, it may not have been caught in addPodcast because the new xml was downloaded later which is missing info
+    // But then I won't be able to display the episodes, should I keep a backup of the old xml file?
+
+    List<Podcast> podcastList = [];
+    await for (var item in itemStream)
+    {
+      if (item is Directory)
+      {
+        // TODO: move this to a separate function that takes in xml and returns Podcast instance, I don't want to duplicate
+        // code here and in addPodcast
+        String xmlFilename = "${item.path}${Platform.pathSeparator}feed.xml";
+        String text = await readFile(xmlFilename);
+        XmlDocument xml = XmlDocument.parse(text);
+        String title = getPodcastTitle(xml);
+        String author = getPodcastAuthor(xml);
+        String description = getPodcastDescription(xml);
+        String albumArtPath = "${item.path}${Platform.pathSeparator}albumArt.jpg";
+        List<Episode> episodes = getEpisodes(xml);
+        podcastList.add(
+          Podcast(item.path, title, author, description, Image.file(File(albumArtPath)), episodes)
+        );
+      }
+    }
+
+    podcastList.sort((a, b) {
+      // - if less
+      // 0 if equal
+      // + if greater
+      if (a.localDir.length > b.localDir.length)
+      {
+        return 1;
+      }
+      else if (a.localDir.length < b.localDir.length)
+      {
+        return -1;
+      }
+      else 
+      {
+        return a.localDir.compareTo(b.localDir);
+      }
+    });
+
+    if (podcastList.isNotEmpty)
+    {
+      String folder = podcastList.last.localDir.split(Platform.pathSeparator).last;
+      _highestPodcastNumber = int.parse(folder);
+    }
+
+    logDebugMsg("_highestPodcastNumber = $_highestPodcastNumber");
+
+    // for testing the circular progress indicator
+    //await Future.delayed(Duration(seconds: 5));
+    return podcastList;
+  }
+
+  //*********************************************
+  //*********************************************
+  //*********************************************
+
   Future<void> saveToFile(String filename, Uint8List bytes) async
   {
     File fd = await File(filename).create(recursive: true);
@@ -115,6 +171,8 @@ class StorageHandler
     return await fd.readAsString();
   }
 
+  //*********************************************
+  //*********************************************
   //*********************************************
 
   String getImgURLFromXML(XmlDocument xml)
@@ -202,11 +260,17 @@ class StorageHandler
       {
         XmlElement? title = item.getElement("title");
         XmlElement? description = item.getElement("description");
-        if (title != null && description != null)
+        XmlElement? pubDate = item.getElement("pubDate");
+        if (title != null && description != null && pubDate != null)
         {
           String descriptionNoHtml = removeHtmlTags(description.innerText);
+          DateTime date = parseDateTime(pubDate.innerText);
           episodes.add(Episode(
-            localPath: "", title: title.innerText, description: description.innerText, descriptionNoHtml: descriptionNoHtml)
+            localPath: "", 
+            title: title.innerText, 
+            description: description.innerText, 
+            descriptionNoHtml: descriptionNoHtml,
+            date: date)
           );
         }
 
@@ -225,6 +289,8 @@ class StorageHandler
   }
 
   //*********************************************
+  //*********************************************
+  //*********************************************
 
   String removeHtmlTags(String input)
   {
@@ -234,9 +300,12 @@ class StorageHandler
     // .*? means 0 or more of any char, it will match the least amount of chars
     RegExp re = RegExp(r"<.*?>", dotAll: true);
     String result = input.replaceAll(re, "");
+    result = result.replaceAll("&amp;", "&");
     return result.trim();
   }
 
+  //*********************************************
+  //*********************************************
   //*********************************************
 
   Future<Uint8List> fetchRSS(String url) async
@@ -256,68 +325,4 @@ class StorageHandler
     final resp = await http.get(Uri.parse(url));
     return resp.bodyBytes;
   }
-
-  //*********************************************
-
-  Future<List<Podcast>> loadPodcasts() async
-  {
-    var path = await getLocalPath();
-    var dir = Directory(path);
-    var itemStream = dir.list();
-
-    // TODO: need a try/catch here, it may not have been caught in addPodcast because the new xml was downloaded later which is missing info
-    // But then I won't be able to display the episodes, should I keep a backup of the old xml file?
-
-    List<Podcast> podcastList = [];
-    await for (var item in itemStream)
-    {
-      if (item is Directory)
-      {
-        // TODO: move this to a separate function that takes in xml and returns Podcast instance, I don't want to duplicate
-        // code here and in addPodcast
-        String xmlFilename = "${item.path}${Platform.pathSeparator}feed.xml";
-        String text = await readFile(xmlFilename);
-        XmlDocument xml = XmlDocument.parse(text);
-        String title = getPodcastTitle(xml);
-        String author = getPodcastAuthor(xml);
-        String description = getPodcastDescription(xml);
-        String albumArtPath = "${item.path}${Platform.pathSeparator}albumArt.jpg";
-        List<Episode> episodes = getEpisodes(xml);
-        podcastList.add(
-          Podcast(item.path, title, author, description, Image.file(File(albumArtPath)), episodes)
-        );
-      }
-    }
-
-    podcastList.sort((a, b) {
-      // - if less
-      // 0 if equal
-      // + if greater
-      if (a.localDir.length > b.localDir.length)
-      {
-        return 1;
-      }
-      else if (a.localDir.length < b.localDir.length)
-      {
-        return -1;
-      }
-      else 
-      {
-        return a.localDir.compareTo(b.localDir);
-      }
-    });
-
-    if (podcastList.isNotEmpty)
-    {
-      String folder = podcastList.last.localDir.split(Platform.pathSeparator).last;
-      _highestPodcastNumber = int.parse(folder);
-    }
-
-    logDebugMsg("_highestPodcastNumber = $_highestPodcastNumber");
-
-    // for testing the circular progress indicator
-    //await Future.delayed(Duration(seconds: 5));
-    return podcastList;
-  }
-
 }

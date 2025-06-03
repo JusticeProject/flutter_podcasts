@@ -21,10 +21,15 @@ class Podcast
 
 class Episode
 {
-  Episode({required this.localPath, required this.title, required this.description, required this.descriptionNoHtml});
+  Episode({required this.localPath, 
+    required this.title, 
+    required this.description, 
+    required this.descriptionNoHtml,
+    required this.date});
 
   final String localPath;
   final String title;
   final String description;
   final String descriptionNoHtml;
+  final DateTime date;
 }

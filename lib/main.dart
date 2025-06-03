@@ -246,7 +246,7 @@ class PodcastPreview extends StatelessWidget
           padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
           child: Text(
             "${podcast.numEpisodesDownloaded} episode${podcast.numEpisodesDownloaded == 1 ? '' : 's'}",
-            style: const TextStyle(fontWeight: FontWeight.bold)
+            style: const TextStyle(fontWeight: FontWeight.w500)
           ),
         ),
       ],
@@ -265,9 +265,10 @@ void showAddPodcastDialog(BuildContext context, void Function(String url) onNewP
     context: context,
     enableDrag: true,
     isScrollControlled: true,
+    useSafeArea: true,
     builder: (BuildContext context) {
       return Container(
-        padding: EdgeInsets.all(10),
+        padding: EdgeInsets.fromLTRB(20, 120, 20, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -342,6 +343,7 @@ void showRemovePodcastDialog(BuildContext context, String title, int index, void
 List<String> feeds = [
 "https://feeds.twit.tv/sn.xml",
 "https://feeds.twit.tv/uls.xml",
+"https://feeds.twit.tv/twig.xml",
 "https://feeds.megaphone.fm/gamescoop",
 "https://feeds.simplecast.com/6WD3bDj7",
 "https://feeds.simplecast.com/JT6pbPkg",

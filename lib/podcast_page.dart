@@ -26,7 +26,7 @@ class PodcastPage extends StatelessWidget
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(margin: EdgeInsets.fromLTRB(180, 10, 180, 10), child: podcast.albumArt),
+              Container(margin: EdgeInsets.fromLTRB(100, 10, 100, 10), child: podcast.albumArt),
               Text(podcast.title, style: Theme.of(context).textTheme.headlineMedium),
               Text(podcast.author, style: Theme.of(context).textTheme.labelMedium),
               Padding(
@@ -41,7 +41,6 @@ class PodcastPage extends StatelessWidget
                     EpisodePreview(episode: episode)
                 ),
                 // TODO: use a builder for a ListView?
-                // TODO: when EpisodePreview widget is tapped need to navigate to EpisodeDetailPage
             ],
           ),
         ),
@@ -127,9 +126,13 @@ class EpisodePreview extends StatelessWidget
             Text(episode.descriptionNoHtml, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // TODO: add date or number of days ago
-                const Text("unplayed"),
+                Text(prettyPrintDate(episode.date)),
+                SizedBox(width: 8),
+                Icon(Icons.circle, size: 5),
+                SizedBox(width: 8),
+                const Text("unplayed"), // TODO: played vs unplayed vs length of episode
                 Spacer(),
                 IconButton(
                   onPressed: _onDownloadEpisode,
