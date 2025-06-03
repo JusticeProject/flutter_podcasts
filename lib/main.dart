@@ -211,8 +211,6 @@ class _LibraryPageState extends State<LibraryPage>
       // TODO: can I dynamically switch from extended to regular FloatingAction button? the extended covers up the bottom podcast text
       floatingActionButton: FloatingActionButton.extended(
         label: Text("Add podcast"),
-        //backgroundColor: Colors.white, // specify the color behind the +
-        //foregroundColor: colorScheme.onPrimary, // specify the color of the +
         // TODO: should I disable this button until the existing podcasts are loaded? use another FutureBuilder with the same future?
         // can I call .then() on the init future and still have the FutureBuilder work? call setState within that .then()
         // or could _onNewPodcast await the Future?
@@ -261,42 +259,48 @@ class PodcastPreview extends StatelessWidget
 
 void showAddPodcastDialog(BuildContext context, void Function(String url) onNewPodcast)
 {
-  // TODO: show this dialog near the top since it appears in the middle of the screen, then
-  // when the keyboard appears it moves up, eliminate this movement by starting it at the top
-  showDialog(
+  String url = "";
+
+  showModalBottomSheet(
     context: context,
+    enableDrag: true,
+    isScrollControlled: true,
     builder: (BuildContext context) {
-      String url = "";
-      return AlertDialog(
-        title: const Text("Enter the URL of the RSS feed:"),
-        content: TextField(autofocus: true,
-          onChanged: (value) {
-            url = value;
-          },
-          onSubmitted: (value) {
-            if (url.isNotEmpty) {
-              onNewPodcast(url);
-              Navigator.of(context).pop();
-            }
-          },
+      return Container(
+        padding: EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text("Enter the URL of the RSS feed:"),
+            TextField(autofocus: true,
+              onChanged: (value) {
+                url = value;
+              },
+              onSubmitted: (value) {
+                if (url.isNotEmpty) {
+                  onNewPodcast(url);
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                TextButton(child: const Text('Cancel'), onPressed: () {Navigator.of(context).pop();}),
+                TextButton(child: const Text('Add'),
+                  onPressed: () {
+                    if (url.isNotEmpty) {
+                      onNewPodcast(url);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+              ],
+            ),
+            Spacer(),
+          ],
         ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-          TextButton(
-            child: const Text('Add'),
-            onPressed: () {
-              if (url.isNotEmpty) {
-                onNewPodcast(url);
-                Navigator.of(context).pop();
-              }
-            },
-          ),
-        ],
       );
     },
   );
@@ -400,6 +404,7 @@ List<String> feeds = [
 // Audio player:
 
 // audio player at bottom of each page
+// Persistent bottom sheets can be created and displayed with the [showBottomSheet] function or the [ScaffoldState.showBottomSheet] method.
 // Ask gemini to create an app that plays .mp3 files with buttons for play, pause, skip ahead 30 seconds, go back 10 seconds
 
 // audio packages:
