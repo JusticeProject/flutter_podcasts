@@ -66,6 +66,7 @@ class _LibraryPageState extends State<LibraryPage>
   final ScrollController _scrollController = ScrollController();
   late Future<List<Podcast>> _futurePodcastList;
   List<Podcast> _podcastList = [];
+  bool _refreshingLibrary = true;
 
   //*******************************************************
 
@@ -79,16 +80,29 @@ class _LibraryPageState extends State<LibraryPage>
 
   Future<void> _onPopulateLibrary() async
   {
+    setState(() {
+      _refreshingLibrary = true;
+    });
+
     for (String feed in feeds)
     {
       await _onNewPodcast(feed);
     }
+
+    setState(() {
+      _refreshingLibrary = false;
+    });
   }
 
   //*******************************************************
 
   Future<void> _onNewPodcast(String url) async
   {
+    setState(() {
+      // disable the Add podcast button
+      _refreshingLibrary = true;
+    });
+
     try
     {
       Podcast newPodcast = await _storageHandler.addPodcast(url);
@@ -111,6 +125,11 @@ class _LibraryPageState extends State<LibraryPage>
       logDebugMsg("Exception!! ${err.toString()}");
       _showMessageToUser(err.toString());
     }
+
+    setState(() {
+      // re-enable the Add podcast button
+      _refreshingLibrary = false;
+    });
 
     logDebugMsg("done with _onNewPodcast");
   }
@@ -136,7 +155,19 @@ class _LibraryPageState extends State<LibraryPage>
   @override
   void initState() {
     super.initState();
+    _refreshingLibrary = true; // disable the Add podcast button until we are finishing loading
     _futurePodcastList = _storageHandler.loadPodcasts();
+
+    // It's ok to register a .then() callback even though the FutureBuilder will also use the Future.
+    // You can call .then() multiple times and each one will be called when the Future completes.
+    _futurePodcastList.then((value) 
+    {
+      setState(() {
+        // setting _podcastList here is redundant but I don't know which one will be called first: here or the FutureBuilder
+        _podcastList = value;
+        _refreshingLibrary = false; // enable the Add podcast button now that _podcastList has been set
+      });
+    });
   }
 
   //*******************************************************
@@ -149,7 +180,7 @@ class _LibraryPageState extends State<LibraryPage>
 
   //*******************************************************
 
-  // TODO: Refresh, drag down on main Library page
+  // TODO: Refresh, drag down on main Library page, be sure to use setState(_refreshingLibrary)
   // TODO: no auto downloads? no auto refresh?
 
   // TODO: if user rotates the phone to landscape then
@@ -220,11 +251,8 @@ class _LibraryPageState extends State<LibraryPage>
       // TODO: can I dynamically switch from extended to regular FloatingAction button? the extended covers up the bottom podcast text
       floatingActionButton: FloatingActionButton.extended(
         label: Text("Add podcast"),
-        // TODO: should I disable this button until the existing podcasts are loaded? use another FutureBuilder with the same future?
-        // can I call .then() on the init future and still have the FutureBuilder work? call setState within that .then()
-        // or could _onNewPodcast await the Future?
-        // also disable it when in the middle of adding a new podcast
-        onPressed: () => showAddPodcastDialog(context, _onNewPodcast),
+        // we disable the Add Podcast button when the library of podcasts is loading or already adding a new one
+        onPressed: _refreshingLibrary ? null : () => showAddPodcastDialog(context, _onNewPodcast),
         icon: const Icon(Icons.add),
       )
     );
