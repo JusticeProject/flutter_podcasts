@@ -124,12 +124,13 @@ class EpisodePreview extends StatelessWidget
           children: [
             const Divider(),
             Text(episode.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold)),
+            // TODO: try Html class, if I can't specify maxLines or overflow then remove all html tags in storage_handler.dart
             Text(episode.description, maxLines: 2, overflow: TextOverflow.ellipsis),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 const Text("unplayed"),
-                Expanded(child: SizedBox()),
+                Spacer(),
                 IconButton(
                   onPressed: _onDownloadEpisode,
                   icon: Icon(Icons.download)

@@ -187,7 +187,6 @@ class _LibraryPageState extends State<LibraryPage>
                 padding: EdgeInsets.all(18),
                 itemCount: _podcastList.length,
                 itemBuilder: (context, index) {
-                  // TODO: show number of episodes downloaded below each album art
                   return GestureDetector(
                     onTap: () => 
                       Navigator.push(context, MaterialPageRoute(builder: (context) => PodcastPage(podcast: _podcastList[index]))),
@@ -215,6 +214,8 @@ class _LibraryPageState extends State<LibraryPage>
         //backgroundColor: Colors.white, // specify the color behind the +
         //foregroundColor: colorScheme.onPrimary, // specify the color of the +
         // TODO: should I disable this button until the existing podcasts are loaded? use another FutureBuilder with the same future?
+        // can I call .then() on the init future and still have the FutureBuilder work? call setState within that .then()
+        // or could _onNewPodcast await the Future?
         // also disable it when in the middle of adding a new podcast
         onPressed: () => showAddPodcastDialog(context, _onNewPodcast),
         icon: const Icon(Icons.add),
@@ -238,6 +239,7 @@ class PodcastPreview extends StatelessWidget
       children: [
         podcast.albumArt,
         // TODO: it would be nice to display the title too, but due to the unforseen lengths this can cause out of bounds issues
+        // I could set the maxLines = 1, then overflow: fade or ellipsis
         /*Padding(
           padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
           child: Text(podcast.title, style: const TextStyle(fontWeight: FontWeight.bold)),

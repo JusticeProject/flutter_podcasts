@@ -183,8 +183,10 @@ class StorageHandler
     XmlElement? description = channel?.getElement("description");
     if (description != null)
     {
-      // TODO: need to remove some xml/html tags that appear like in Planet Money's description: <em> </em> <br>
+      // TODO: need to remove some html tags that appear like in Planet Money's description: <em> </em> <br>
       // or is there a Text widget that will render them correctly? this also shows up in Episode descriptions
+      // RegExp re = RegExp(r"<.*?>"); // add the dotAll option
+      // String result = html.replaceAll(re, "");
       return description.innerText;
     }
 
