@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'podcast_page.dart';
-import 'podcast.dart';
+import 'data_structures.dart';
 import 'utilities.dart';
 import 'storage_handler.dart';
 

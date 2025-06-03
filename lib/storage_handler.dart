@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:xml/xml.dart';
 
-import 'podcast.dart';
+import 'data_structures.dart';
 import 'utilities.dart';
 
 //*************************************************************************************************
@@ -193,8 +193,6 @@ class StorageHandler
 
   List<Episode> getEpisodes(XmlDocument xml)
   {
-    // TODO: some podcasts like Planet Money have paid subscriptions with extra episodes, how do I ignore the episodes behind a paywall?
-    
     XmlElement? channel = xml.firstElementChild?.firstElementChild;
     if (channel != null)
     {

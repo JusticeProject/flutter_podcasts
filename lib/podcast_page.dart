@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'utilities.dart';
-import 'podcast.dart';
+import 'data_structures.dart';
 import 'episode_page.dart';
 
 //*************************************************************************************************
@@ -128,6 +128,7 @@ class EpisodePreview extends StatelessWidget
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
+                // TODO: add date or number of days ago
                 const Text("unplayed"),
                 Spacer(),
                 IconButton(
