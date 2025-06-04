@@ -72,7 +72,7 @@ String prettyPrintDate(DateTime date)
   Duration diff = now.difference(date); // diff = now - date
 
   // TODO: what about if the date was published as a different time zone?, need to update stringToDateTime and dateTimeToString
-  // TODO: add x minutes ago?
+  // TODO: add x minutes ago? or return the string "now"?
 
   if (diff.inHours == 1)
   {
@@ -101,6 +101,20 @@ String prettyPrintDate(DateTime date)
 }
 
 //*************************************************************************************************
+
+bool isExpired(DateTime localCacheTime, DateTime remoteTime)
+{
+  return remoteTime.isAfter(localCacheTime);
+}
+
+//*************************************************************************************************
+
+bool isExpiredString(String localCacheTime, String remoteTime)
+{
+  return isExpired(stringToDateTime(localCacheTime), stringToDateTime(remoteTime));
+}
+
+//*************************************************************************************************
 //*************************************************************************************************
 //*************************************************************************************************
 
@@ -110,6 +124,30 @@ Future<String> getLocalPath() async
   var dir1 = await getApplicationCacheDirectory();
   //logDebugMsg(dir1.path);
   return dir1.path;
+}
+
+//*************************************************************************************************
+
+String combinePaths(String path1, String path2)
+{
+  if (path1.endsWith(Platform.pathSeparator))
+  {
+    path1 = path1.substring(0, path1.length - 1);
+  }
+
+  if (path2.startsWith(Platform.pathSeparator))
+  {
+    path2 = path2.substring(1);
+  }
+  
+  return "$path1${Platform.pathSeparator}$path2";
+}
+
+//*************************************************************************************************
+
+String getFileNameFromPath(String fullPath)
+{
+  return fullPath.split(Platform.pathSeparator).last;
 }
 
 //*************************************************************************************************

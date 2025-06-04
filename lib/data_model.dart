@@ -46,30 +46,17 @@ class DataModel extends ChangeNotifier
 
       _highestFeedNumber++;
       String localDir = await getLocalPath();
-      localDir += "${Platform.pathSeparator}$_highestFeedNumber${Platform.pathSeparator}";
+      localDir = combinePaths(localDir, "$_highestFeedNumber");
 
       Uint8List rssBytes = await _fetchRSS(url);
-      String xmlFilename = "${localDir}feed.xml";
+      String xmlFilename = combinePaths(localDir, "feed.xml");
       await saveToFileBytes(xmlFilename, rssBytes);
       
-      String text = await readFileString(xmlFilename);
-      XmlDocument xml = XmlDocument.parse(text);
+      Feed feed = await _gatherFeedInfo(localDir, true);
+      _feedList.add(feed);
 
-      String imgURL = _getImgURLFromXML(xml);
-      Uint8List imgBytes = await _fetchAlbumArt(imgURL);
-      String imgFilename = "${localDir}albumArt.jpg";
-      await saveToFileBytes(imgFilename, imgBytes);
-
-      String title = _getFeedTitle(xml);
-      String author = _getFeedAuthor(xml);
-      String description = _getFeedDescription(xml);
-      logDebugMsg("found title $title");
-      List<Episode> episodes = _getEpisodes(xml);
-      _feedList.add(Feed(_highestFeedNumber, localDir, title, author, description, Image.file(File(imgFilename)), episodes));
-
-      String pubDate = _getPubDate(xml);
-      FeedConfig config = FeedConfig(url, pubDate);
-      saveFeedConfig(_highestFeedNumber, config);
+      FeedConfig config = FeedConfig(url, dateTimeToString(feed.date));
+      saveFeedConfig(localDir, config);
     }
     catch (err)
     {
@@ -114,30 +101,54 @@ class DataModel extends ChangeNotifier
     _isRefreshing = true;
     notifyListeners();
 
+    bool needToLoadFromDisk = false;
+
     for (Feed feed in _feedList)
     {
-      await _refreshFeed(feed);
+      bool feedHasNewData = await _refreshFeed(feed);
+      needToLoadFromDisk = needToLoadFromDisk || feedHasNewData;
     }
 
-    await _loadAllFeedsFromDisk();
+    if (needToLoadFromDisk)
+    {
+      await _loadAllFeedsFromDisk();
+    }
+
     _isRefreshing = false;
     notifyListeners();
   }
 
   //*********************************************
 
-  Future<void> _refreshFeed(Feed feed) async
+  // return true if it was refreshed with new data, false otherwise
+  Future<bool> _refreshFeed(Feed feed) async
   {
     // TODO: what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode? should I delete the 11th episode?
     // TODO: const MAX_EPISODES = 10? then use it here and in getEpisodes()
 
-    // TODO: if date in local xml is same as date in remote xml then don't save to disk
+    // TODO: if number of episodes is different between local and remote XML then save xml to disk?
     // TODO: should I ever re-grab the albumArt from the server?
 
-    FeedConfig config = await loadFeedConfig(feed.feedNumber);
+    FeedConfig config = await loadFeedConfig(feed.localDir);
     Uint8List rssBytes = await _fetchRSS(config.url);
-    String xmlFilename = "${feed.localDir}feed.xml";
-    await saveToFileBytes(xmlFilename, rssBytes);
+    String rssText = String.fromCharCodes(rssBytes);
+    XmlDocument xml = XmlDocument.parse(rssText);
+    String remotePubDate = _getPubDate(xml);
+
+    if (isExpiredString(config.dateString, remotePubDate))
+    {
+      logDebugMsg("saving new XML for ${feed.title}");
+      String xmlFilename = combinePaths(feed.localDir, "feed.xml");
+      await saveToFileBytes(xmlFilename, rssBytes);
+      config.dateString = remotePubDate;
+      saveFeedConfig(feed.localDir, config);
+      return true;
+    }
+    else
+    {
+      logDebugMsg("${feed.title} already up to date");
+      return false;
+    }
 
     // TODO: allow user to refresh a single feed? if so need notifyListeners
     //notifyListeners();
@@ -145,6 +156,38 @@ class DataModel extends ChangeNotifier
 
   //*********************************************
   //*********************************************
+  //*********************************************
+
+  Future<Feed> _gatherFeedInfo(String localDir, bool downloadAlbumArt) async
+  {
+    String feedNumberString = getFileNameFromPath(localDir);
+    int feedNumberInt = int.parse(feedNumberString);
+
+    String xmlFilename = combinePaths(localDir, "feed.xml");
+    String text = await readFileString(xmlFilename);
+    XmlDocument xml = XmlDocument.parse(text);
+
+    String imgFilename = combinePaths(localDir, "albumArt.jpg");
+    if (downloadAlbumArt)
+    {
+      String imgURL = _getImgURLFromXML(xml);
+      Uint8List imgBytes = await _fetchAlbumArt(imgURL);
+      await saveToFileBytes(imgFilename, imgBytes);
+    }
+
+    String title = _getFeedTitle(xml);
+    String author = _getFeedAuthor(xml);
+    String description = _getFeedDescription(xml);
+    logDebugMsg("found title $title");
+    List<Episode> episodes = _getEpisodes(xml);
+
+    String dateString = _getPubDate(xml);
+    DateTime date = stringToDateTime(dateString);
+
+    Feed feed = Feed(feedNumberInt, localDir, title, author, description, Image.file(File(imgFilename)), date, episodes);
+    return feed;
+  }
+
   //*********************************************
 
   Future<void> _loadAllFeedsFromDisk() async
@@ -164,22 +207,8 @@ class DataModel extends ChangeNotifier
     {
       if (item is Directory)
       {
-        // TODO: move this to a separate function that takes in xml and returns Podcast instance, I don't want to duplicate
-        // code here and in addPodcast
-        String feedNumberString = item.path.split(Platform.pathSeparator).last;
-        int feedNumberInt = int.parse(feedNumberString);
-
-        String xmlFilename = "${item.path}${Platform.pathSeparator}feed.xml";
-        String text = await readFileString(xmlFilename);
-        XmlDocument xml = XmlDocument.parse(text);
-        String title = _getFeedTitle(xml);
-        String author = _getFeedAuthor(xml);
-        String description = _getFeedDescription(xml);
-        String albumArtPath = "${item.path}${Platform.pathSeparator}albumArt.jpg";
-        List<Episode> episodes = _getEpisodes(xml);
-        _feedList.add(
-          Feed(feedNumberInt, "${item.path}${Platform.pathSeparator}", title, author, description, Image.file(File(albumArtPath)), episodes)
-        );
+        Feed feed = await _gatherFeedInfo(item.path, false);
+        _feedList.add(feed);
       }
     }
 
@@ -200,20 +229,17 @@ class DataModel extends ChangeNotifier
 
   //*********************************************
 
-  Future<void> saveFeedConfig(int feedNumber, FeedConfig config) async
+  Future<void> saveFeedConfig(String localDir, FeedConfig config) async
   {
-    String localDir = await getLocalPath();
-    localDir += "${Platform.pathSeparator}$feedNumber${Platform.pathSeparator}config.txt";
-
+    localDir = combinePaths(localDir, "config.txt");
     await saveToFileString(localDir, config.toString());
   }
 
   //*********************************************
 
-  Future<FeedConfig> loadFeedConfig(int feedNumber) async
+  Future<FeedConfig> loadFeedConfig(String localDir) async
   {
-    String localDir = await getLocalPath();
-    localDir += "${Platform.pathSeparator}$feedNumber${Platform.pathSeparator}config.txt";
+    localDir = combinePaths(localDir, "config.txt");
 
     String data = await readFileString(localDir);
     FeedConfig config = FeedConfig.fromExisting(data);

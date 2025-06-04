@@ -4,15 +4,20 @@ import 'package:flutter/material.dart';
 
 class Feed
 {
-  Feed(this.feedNumber, this.localDir, this.title, this.author, this.description, this.albumArt, this.episodes);
+  Feed(this.feedNumber, this.localDir, this.title, this.author, this.description, this.albumArt, 
+    this.date, this.episodes);
   
   final int feedNumber;
   final String localDir;
-  // TODO: add url for the feed
+
+  // TODO: add url for the feed?
+
   final String title;
   final String author;
   final String description;
   final Image albumArt;
+
+  final DateTime date;
   int numEpisodesDownloaded = 0;
 
   // TODO: add Episodes from the feed and Episodes that have been downloaded
@@ -23,14 +28,14 @@ class Feed
 
 class FeedConfig
 {
-  FeedConfig(this.url, this.pubDate);
+  FeedConfig(this.url, this.dateString);
   
   final String url;
-  String pubDate; // date inside the last XML that was downloaded and saved
+  String dateString; // date inside the last XML that was downloaded and saved
 
   @override
   String toString() {
-    return "$url\n$pubDate";
+    return "$url\n$dateString";
   }
 
   factory FeedConfig.fromExisting(String data)

@@ -134,6 +134,9 @@ class EpisodePreview extends StatelessWidget
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // TODO: if the date says 1 hour ago then wait 10 hours... it will still say 1 hour ago
+                // Future.periodic in the Constructor? or initState (StatefulWidget)? cancel it in onDispose, use logDebugMsg to make sure 
+                // it gets called. Wrap with setState. String _prettyPrintDate member variable.
                 Text(prettyPrintDate(episode.date)),
                 SizedBox(width: 8),
                 Icon(Icons.circle, size: 5),
