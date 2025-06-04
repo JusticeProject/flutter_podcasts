@@ -41,6 +41,7 @@ class StorageHandler
     try
     {
       // TODO: save url and date last retrieved in a .txt file, this will be used during refreshFeed
+      // saveFeedConfig, loadFeedConfig, class FeedConfig{url, pubDate from last downloaded xml}
 
       _highestFeedNumber++;
       String localDir = await getLocalPath();
@@ -103,6 +104,8 @@ class StorageHandler
     // TODO: need a try/catch here, it may not have been caught in addPodcast because the new xml was downloaded later which is missing info
     // But then I won't be able to display the episodes, should I keep a backup of the old xml file?
     // try/catch is also needed so the app doesn't crash on loading
+
+    // TODO: should I move the below to loadFeedFromDisk?
 
     List<Feed> feedList = [];
     await for (var item in itemStream)

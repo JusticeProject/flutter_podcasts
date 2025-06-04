@@ -7,6 +7,7 @@ class Feed
   Feed(this.localDir, this.title, this.author, this.description, this.albumArt, this.episodes);
   
   final String localDir;
+  // TODO: add url for the feed
   final String title;
   final String author;
   final String description;
