@@ -38,7 +38,7 @@ void logDebugMsg(String msg)
 
 //*************************************************************************************************
 
-DateTime parseDateTime(String input)
+DateTime stringToDateTime(String input)
 {
   try
   {
@@ -50,6 +50,13 @@ DateTime parseDateTime(String input)
     logDebugMsg(err.toString());
     return DateTime.now();
   }
+}
+
+//*************************************************************************************************
+
+String dateTimeToString(DateTime input)
+{
+  return DateFormat("E, dd MMM yyyy HH:mm:ss").format(input);
 }
 
 //*************************************************************************************************

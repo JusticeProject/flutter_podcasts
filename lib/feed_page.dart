@@ -5,13 +5,13 @@ import 'episode_page.dart';
 
 //*************************************************************************************************
 
-class PodcastPage extends StatelessWidget
+class FeedPage extends StatelessWidget
 {
-  const PodcastPage({super.key, required this.podcast});
+  const FeedPage({super.key, required this.feed});
 
-  final Podcast podcast;
+  final Feed feed;
 
-  // TODO: Refresh, drag down on PodcastPage?
+  // TODO: Refresh, drag down on FeedPage?
 
   @override
   Widget build(BuildContext context) {
@@ -28,14 +28,14 @@ class PodcastPage extends StatelessWidget
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(margin: EdgeInsets.fromLTRB(100, 10, 100, 10), child: podcast.albumArt),
-              Text(podcast.title, style: Theme.of(context).textTheme.headlineMedium),
-              Text(podcast.author, style: Theme.of(context).textTheme.labelMedium),
+              Container(margin: EdgeInsets.fromLTRB(100, 10, 100, 10), child: feed.albumArt),
+              Text(feed.title, style: Theme.of(context).textTheme.headlineMedium),
+              Text(feed.author, style: Theme.of(context).textTheme.labelMedium),
               Padding(
                 padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
-                child: CollapsibleText(text: podcast.description),
+                child: CollapsibleText(text: feed.description),
               ),
-              for (var episode in podcast.episodes)
+              for (var episode in feed.episodes)
                 GestureDetector(
                   onTap: () =>
                     Navigator.push(context, MaterialPageRoute(builder: (context) => EpisodePage(episode: episode))),
@@ -102,6 +102,7 @@ class EpisodePreview extends StatelessWidget
   void _onDownloadEpisode()
   {
     // TODO: implement downloading (or removing if already downloaded)
+    // is there a download icon combined with progress indicator?
     logDebugMsg("downloading ${episode.title}");
   }
 
@@ -126,6 +127,7 @@ class EpisodePreview extends StatelessWidget
             const Divider(),
             Text(episode.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold)),
             Text(episode.descriptionNoHtml, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+            // TODO: 3 dots icon on right side which shows bottom sheet: Mark as Played/Unplayed, Download?
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -134,7 +136,7 @@ class EpisodePreview extends StatelessWidget
                 SizedBox(width: 8),
                 Icon(Icons.circle, size: 5),
                 SizedBox(width: 8),
-                const Text("unplayed"), // TODO: played vs unplayed vs length of episode
+                const Text("unplayed"), // TODO: played vs 40 min vs 38 min left + progress bar
                 Spacer(),
                 IconButton(
                   onPressed: _onDownloadEpisode,

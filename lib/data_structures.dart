@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 //*************************************************************************************************
 
-class Podcast
+class Feed
 {
-  Podcast(this.localDir, this.title, this.author, this.description, this.albumArt, this.episodes);
+  Feed(this.localDir, this.title, this.author, this.description, this.albumArt, this.episodes);
   
   final String localDir;
   final String title;

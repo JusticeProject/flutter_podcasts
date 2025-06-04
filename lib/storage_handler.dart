@@ -13,7 +13,7 @@ import 'utilities.dart';
 
 class StorageHandler
 {
-  int _highestPodcastNumber = -1;
+  int _highestFeedNumber = -1;
 
   // Private constructor:
   StorageHandler._privateConstructor();
@@ -36,13 +36,15 @@ class StorageHandler
   //*********************************************
   //*********************************************
 
-  Future<Podcast> addPodcast(String url) async
+  Future<Feed> addFeed(String url) async
   {
     try
     {
-      _highestPodcastNumber++;
+      // TODO: save url and date last retrieved in a .txt file, this will be used during refreshFeed
+
+      _highestFeedNumber++;
       String localDir = await getLocalPath();
-      localDir += "${Platform.pathSeparator}$_highestPodcastNumber${Platform.pathSeparator}";
+      localDir += "${Platform.pathSeparator}$_highestFeedNumber${Platform.pathSeparator}";
 
       Uint8List rssBytes = await fetchRSS(url);
       String xmlFilename = "${localDir}feed.xml";
@@ -56,33 +58,24 @@ class StorageHandler
       String imgFilename = "${localDir}albumArt.jpg";
       await saveToFile(imgFilename, imgBytes);
 
-      String title = getPodcastTitle(xml);
-      String author = getPodcastAuthor(xml);
-      String description = getPodcastDescription(xml);
+      String title = getFeedTitle(xml);
+      String author = getFeedAuthor(xml);
+      String description = getFeedDescription(xml);
       logDebugMsg("found title $title");
       List<Episode> episodes = getEpisodes(xml);
-      return Podcast(localDir, title, author, description, Image.file(File(imgFilename)), episodes);
+      return Feed(localDir, title, author, description, Image.file(File(imgFilename)), episodes);
     }
     catch (err)
     {
       // TODO: cleanup any folders/files that were created
-      _highestPodcastNumber--;
+      _highestFeedNumber--;
       rethrow;
     }
   }
 
   //*********************************************
 
-  // TODO: need updatePodcastFeed()
-  // For each subscription save for offline usage:
-  // url and date last retrieved in a .txt file
-  // if date in local xml is same as date in remote xml then don't save to disk
-  // albumArt
-  // entire xml file
-
-  //*********************************************
-
-  Future<void> removePodcast(Podcast podcast) async
+  Future<void> removeFeed(Feed feed) async
   {
     // TODO: what if the files are in use? what if the .mp3 is playing right now? I should stop (all?) playback first
     // maybe during loading I could remove files/folders that are marked for deletion
@@ -91,17 +84,17 @@ class StorageHandler
 
     try
     {
-      await Directory(podcast.localDir).delete(recursive: true);
+      await Directory(feed.localDir).delete(recursive: true);
     }
     catch (err)
     {
-      logDebugMsg("Exception in removePodcast: ${err.toString()}");
+      logDebugMsg("Exception in removeFeed: ${err.toString()}");
     }
   }
 
   //*********************************************
 
-  Future<List<Podcast>> loadPodcasts() async
+  Future<List<Feed>> loadAllFeedsFromDisk() async
   {
     var path = await getLocalPath();
     var dir = Directory(path);
@@ -109,8 +102,9 @@ class StorageHandler
 
     // TODO: need a try/catch here, it may not have been caught in addPodcast because the new xml was downloaded later which is missing info
     // But then I won't be able to display the episodes, should I keep a backup of the old xml file?
+    // try/catch is also needed so the app doesn't crash on loading
 
-    List<Podcast> podcastList = [];
+    List<Feed> feedList = [];
     await for (var item in itemStream)
     {
       if (item is Directory)
@@ -120,18 +114,18 @@ class StorageHandler
         String xmlFilename = "${item.path}${Platform.pathSeparator}feed.xml";
         String text = await readFile(xmlFilename);
         XmlDocument xml = XmlDocument.parse(text);
-        String title = getPodcastTitle(xml);
-        String author = getPodcastAuthor(xml);
-        String description = getPodcastDescription(xml);
+        String title = getFeedTitle(xml);
+        String author = getFeedAuthor(xml);
+        String description = getFeedDescription(xml);
         String albumArtPath = "${item.path}${Platform.pathSeparator}albumArt.jpg";
         List<Episode> episodes = getEpisodes(xml);
-        podcastList.add(
-          Podcast(item.path, title, author, description, Image.file(File(albumArtPath)), episodes)
+        feedList.add(
+          Feed(item.path, title, author, description, Image.file(File(albumArtPath)), episodes)
         );
       }
     }
 
-    podcastList.sort((a, b) {
+    feedList.sort((a, b) {
       // - if less
       // 0 if equal
       // + if greater
@@ -149,17 +143,45 @@ class StorageHandler
       }
     });
 
-    if (podcastList.isNotEmpty)
+    if (feedList.isNotEmpty)
     {
-      String folder = podcastList.last.localDir.split(Platform.pathSeparator).last;
-      _highestPodcastNumber = int.parse(folder);
+      String folder = feedList.last.localDir.split(Platform.pathSeparator).last;
+      _highestFeedNumber = int.parse(folder);
     }
 
-    logDebugMsg("_highestPodcastNumber = $_highestPodcastNumber");
+    logDebugMsg("_highestFeedNumber = $_highestFeedNumber");
 
     // for testing the circular progress indicator
     //await Future.delayed(Duration(seconds: 5));
-    return podcastList;
+    return feedList;
+  }
+
+  //*********************************************
+
+  Future<List<Feed>> refreshAllFeeds()
+  {
+    // TODO: call refreshFeed for each feed
+
+    // the url is in the xml file at 
+    // <atom:link href="https://talkpython.fm/episodes/rss" rel="self" type="application/rss+xml"/>
+    // or 
+    // <link>https://www.npr.org/podcasts/510289/planet-money</link>
+    // I don't think I should rely on that
+
+    // TODO: what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode? should I delete the 11th episode?
+    // TODO: const MAX_EPISODES = 10? then use it here and in getEpisodes()
+
+    // TODO: if date in local xml is same as date in remote xml then don't save to disk
+    // TODO: should I ever re-grab the albumArt from the server?
+
+    return loadAllFeedsFromDisk();
+  }
+
+  //*********************************************
+
+  void refreshFeed(String localDir)
+  {
+    
   }
 
   //*********************************************
@@ -209,7 +231,7 @@ class StorageHandler
 
   //*********************************************
 
-  String getPodcastTitle(XmlDocument xml)
+  String getFeedTitle(XmlDocument xml)
   {
     // this is a slower version of getting the channel element
     //XmlElement? rss = xml.getElement("rss");
@@ -228,7 +250,7 @@ class StorageHandler
 
   //*********************************************
 
-  String getPodcastAuthor(XmlDocument xml)
+  String getFeedAuthor(XmlDocument xml)
   {
     // first element is <rss> then second element is <channel>
     XmlElement? channel = xml.firstElementChild?.firstElementChild;
@@ -243,7 +265,7 @@ class StorageHandler
 
   //*********************************************
 
-  String getPodcastDescription(XmlDocument xml)
+  String getFeedDescription(XmlDocument xml)
   {
     // first element is <rss> then second element is <channel>
     XmlElement? channel = xml.firstElementChild?.firstElementChild;
@@ -273,8 +295,9 @@ class StorageHandler
         if (title != null && description != null && pubDate != null)
         {
           String descriptionNoHtml = removeHtmlTags(description.innerText);
-          DateTime date = parseDateTime(pubDate.innerText);
+          DateTime date = stringToDateTime(pubDate.innerText);
           episodes.add(Episode(
+            // TODO: get localPath only if it has been downloaded
             localPath: "", 
             title: title.innerText, 
             description: description.innerText, 
@@ -284,7 +307,6 @@ class StorageHandler
         }
 
         // TODO: only get the 10 most recent episodes? some feeds have ALL the episodes
-        // what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode? should I delete the 11th episode?
         if (episodes.length >= 10)
         {
           break;

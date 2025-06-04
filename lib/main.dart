@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'podcast_page.dart';
+import 'feed_page.dart';
 import 'data_structures.dart';
 import 'utilities.dart';
 import 'storage_handler.dart';
@@ -64,8 +64,8 @@ class _LibraryPageState extends State<LibraryPage>
 {
   final StorageHandler _storageHandler = StorageHandler();
   final ScrollController _scrollController = ScrollController();
-  late Future<List<Podcast>> _futurePodcastList;
-  List<Podcast> _podcastList = [];
+  late Future<List<Feed>> _futureFeedList;
+  List<Feed> _feedList = [];
   bool _isRefreshing = true;
 
   //*******************************************************
@@ -86,7 +86,7 @@ class _LibraryPageState extends State<LibraryPage>
 
     for (String feed in feeds)
     {
-      await _onNewPodcast(feed);
+      await _onNewFeed(feed);
     }
 
     setState(() {
@@ -96,7 +96,7 @@ class _LibraryPageState extends State<LibraryPage>
 
   //*******************************************************
 
-  Future<void> _onNewPodcast(String url) async
+  Future<void> _onNewFeed(String url) async
   {
     setState(() {
       // disable the Add podcast button
@@ -105,9 +105,9 @@ class _LibraryPageState extends State<LibraryPage>
 
     try
     {
-      Podcast newPodcast = await _storageHandler.addPodcast(url);
+      Feed newFeed = await _storageHandler.addFeed(url);
       setState(() {
-        _podcastList.add(newPodcast);
+        _feedList.add(newFeed);
       });
       logDebugMsg("new podcast added");
 
@@ -131,23 +131,23 @@ class _LibraryPageState extends State<LibraryPage>
       _isRefreshing = false;
     });
 
-    logDebugMsg("done with _onNewPodcast");
+    logDebugMsg("done with _onNewFeed");
   }
 
   //*******************************************************
 
-  void _onRemovePodcast(int index)
+  void _onRemoveFeed(int index)
   {
-    logDebugMsg("_onRemovePodcast($index) called");
+    logDebugMsg("_onRemoveFeed($index) called");
 
     setState(() {
-      Podcast podcastToRemove = _podcastList.removeAt(index);
+      Feed feedToRemove = _feedList.removeAt(index);
 
       // delete it from the filesystem, it's an async function but we don't need to wait for it to finish
-      _storageHandler.removePodcast(podcastToRemove);
+      _storageHandler.removeFeed(feedToRemove);
     });
 
-    logDebugMsg("done with _onRemovePodcast");
+    logDebugMsg("done with _onRemoveFeed");
   }
 
   //*******************************************************
@@ -158,29 +158,29 @@ class _LibraryPageState extends State<LibraryPage>
 
     setState(() {
       _isRefreshing = true;
-      _futurePodcastList = _storageHandler.loadPodcasts();
+      _futureFeedList = _storageHandler.refreshAllFeeds();
     });
 
     // TODO: no auto downloads? no auto refresh?
     
-    // when our podcastList has been loaded we grab the list and re-enable the buttons
-    _futurePodcastList.then((value) {
+    // when our feedList has been loaded we grab the list and re-enable the buttons
+    _futureFeedList.then((value) {
       setState(() {
-        _podcastList = value;
+        _feedList = value;
         _isRefreshing = false;
       });
     });
 
-    // calling this function will create a Future, that Future completes when the _futurePodcastList Future has completed
+    // calling this function will create a Future, that Future completes when the _futureFeedList Future has completed
     Future<void> convertFuture() async
     {
-      await _futurePodcastList;
+      await _futureFeedList;
       Future<void> newFuture = Future.value(); // this newFuture completes right away when it reaches this line
       return newFuture;
     }
 
     // we aren't calling await on this convertedFuture, whoever does await it will be stuck inside convertFuture()
-    // on the line "await _futurePodcastList" for a few seconds
+    // on the line "await _futureFeedList" for a few seconds
     Future<void> convertedFuture = convertFuture();
     return convertedFuture;
   }
@@ -191,16 +191,16 @@ class _LibraryPageState extends State<LibraryPage>
   void initState() {
     super.initState();
     _isRefreshing = true; // disable the Add podcast button until we are finishing loading
-    _futurePodcastList = _storageHandler.loadPodcasts();
+    _futureFeedList = _storageHandler.loadAllFeedsFromDisk();
 
     // It's ok to register a .then() callback even though the FutureBuilder will also use the Future.
     // You can call .then() multiple times and each one will be called when the Future completes.
-    _futurePodcastList.then((value) 
+    _futureFeedList.then((value) 
     {
       setState(() {
-        // setting _podcastList here is redundant but I don't know which one will be called first: here or the FutureBuilder
-        _podcastList = value;
-        _isRefreshing = false; // enable the Add podcast button now that _podcastList has been set
+        // setting _feedList here is redundant but I don't know which one will be called first: here or the FutureBuilder
+        _feedList = value;
+        _isRefreshing = false; // enable the Add podcast button now that _feedList has been set
       });
     });
   }
@@ -240,14 +240,14 @@ class _LibraryPageState extends State<LibraryPage>
       ),
       body: SafeArea(
         child: FutureBuilder(
-          future: _futurePodcastList,
+          future: _futureFeedList,
           builder: (context, snapshot) {
             if (snapshot.hasData)
             {
               // The following line of code is important: after this line runs the two variables will always refer to the same list.
-              // So if I remove an item from _podcastList and call setState then snapshot.data will also see that update.
-              // I verified this with print("${identityHashCode(_podcastList)}") and print("${identityHashCode(snapshot.data)}")
-              _podcastList = snapshot.data!;
+              // So if I remove an item from _feedList and call setState then snapshot.data will also see that update.
+              // I verified this with print("${identityHashCode(_feedList)}") and print("${identityHashCode(snapshot.data)}")
+              _feedList = snapshot.data!;
               return RefreshIndicator(
                 onRefresh: () => _onRefresh(),
                 child: GridView.builder(
@@ -260,15 +260,15 @@ class _LibraryPageState extends State<LibraryPage>
                   ),
                   controller: _scrollController,
                   padding: EdgeInsets.all(18),
-                  itemCount: _podcastList.length,
+                  itemCount: _feedList.length,
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       // disable tapping on each albumArt while refreshing
                       onTap: _isRefreshing ? null : () => 
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => PodcastPage(podcast: _podcastList[index]))),
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => FeedPage(feed: _feedList[index]))),
                       onLongPress: _isRefreshing ? null : () => 
-                        showRemovePodcastDialog(context, _podcastList[index].title, index, _onRemovePodcast), 
-                      child: PodcastPreview(podcast: _podcastList[index])
+                        showRemoveFeedDialog(context, _feedList[index].title, index, _onRemoveFeed), 
+                      child: FeedPreview(feed: _feedList[index])
                     );
                   }
                 ),
@@ -288,8 +288,8 @@ class _LibraryPageState extends State<LibraryPage>
       // TODO: can I dynamically switch from extended to regular FloatingAction button? the extended covers up the bottom podcast text
       floatingActionButton: FloatingActionButton.extended(
         label: Text("Add podcast"),
-        // we disable the Add Podcast button when the library of podcasts is loading or already adding a new one
-        onPressed: _isRefreshing ? null : () => showAddPodcastDialog(context, _onNewPodcast),
+        // we disable the Add Podcast button when the library of feeds is loading or already adding a new one
+        onPressed: _isRefreshing ? null : () => showAddFeedDialog(context, _onNewFeed),
         icon: const Icon(Icons.add),
       )
     );
@@ -298,18 +298,18 @@ class _LibraryPageState extends State<LibraryPage>
 
 //*************************************************************************************************
 
-class PodcastPreview extends StatelessWidget
+class FeedPreview extends StatelessWidget
 {
-  const PodcastPreview({super.key, required this.podcast});
+  const FeedPreview({super.key, required this.feed});
 
-  final Podcast podcast;
+  final Feed feed;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        podcast.albumArt,
+        feed.albumArt,
         // TODO: it would be nice to display the title too, but due to the unforseen lengths this can cause out of bounds issues
         // I could set the maxLines = 1, then overflow: fade or ellipsis
         /*Padding(
@@ -319,7 +319,7 @@ class PodcastPreview extends StatelessWidget
         Padding(
           padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
           child: Text(
-            "${podcast.numEpisodesDownloaded} episode${podcast.numEpisodesDownloaded == 1 ? '' : 's'}",
+            "${feed.numEpisodesDownloaded} episode${feed.numEpisodesDownloaded == 1 ? '' : 's'}",
             style: const TextStyle(fontWeight: FontWeight.w500)
           ),
         ),
@@ -331,7 +331,7 @@ class PodcastPreview extends StatelessWidget
 
 //*************************************************************************************************
 
-void showAddPodcastDialog(BuildContext context, void Function(String url) onNewPodcast)
+void showAddFeedDialog(BuildContext context, void Function(String url) onNewFeed)
 {
   String url = "";
 
@@ -353,7 +353,7 @@ void showAddPodcastDialog(BuildContext context, void Function(String url) onNewP
               },
               onSubmitted: (value) {
                 if (url.isNotEmpty) {
-                  onNewPodcast(url);
+                  onNewFeed(url);
                   Navigator.of(context).pop();
                 }
               },
@@ -366,7 +366,7 @@ void showAddPodcastDialog(BuildContext context, void Function(String url) onNewP
                 TextButton(child: const Text('Add'),
                   onPressed: () {
                     if (url.isNotEmpty) {
-                      onNewPodcast(url);
+                      onNewFeed(url);
                       Navigator.of(context).pop();
                     }
                   },
@@ -383,7 +383,7 @@ void showAddPodcastDialog(BuildContext context, void Function(String url) onNewP
 
 //*************************************************************************************************
 
-void showRemovePodcastDialog(BuildContext context, String title, int index, void Function(int index) onRemovePodcast)
+void showRemoveFeedDialog(BuildContext context, String title, int index, void Function(int index) onRemoveFeed)
 {
   showDialog(
     context: context,
@@ -400,7 +400,7 @@ void showRemovePodcastDialog(BuildContext context, String title, int index, void
           TextButton(
             child: const Text('Remove'),
             onPressed: () {
-              onRemovePodcast(index);
+              onRemoveFeed(index);
               Navigator.of(context).pop();
             },
           ),
