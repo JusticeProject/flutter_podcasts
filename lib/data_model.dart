@@ -30,7 +30,7 @@ class DataModel extends ChangeNotifier
   // Constructor
   DataModel()
   {
-    loadAllFeedsFromDisk();
+    _loadAllFeedsFromDisk();
   }
 
   //*********************************************
@@ -44,31 +44,32 @@ class DataModel extends ChangeNotifier
       _isRefreshing = true;
       notifyListeners();
 
-      // TODO: save url and date last retrieved in a .txt file, this will be used during refreshFeed
-      // saveFeedConfig, loadFeedConfig, class FeedConfig{url, pubDate from last downloaded xml}
-
       _highestFeedNumber++;
       String localDir = await getLocalPath();
       localDir += "${Platform.pathSeparator}$_highestFeedNumber${Platform.pathSeparator}";
 
-      Uint8List rssBytes = await fetchRSS(url);
+      Uint8List rssBytes = await _fetchRSS(url);
       String xmlFilename = "${localDir}feed.xml";
-      await saveToFile(xmlFilename, rssBytes);
+      await saveToFileBytes(xmlFilename, rssBytes);
       
-      String text = await readFile(xmlFilename);
+      String text = await readFileString(xmlFilename);
       XmlDocument xml = XmlDocument.parse(text);
 
-      String imgURL = getImgURLFromXML(xml);
-      Uint8List imgBytes = await fetchAlbumArt(imgURL);
+      String imgURL = _getImgURLFromXML(xml);
+      Uint8List imgBytes = await _fetchAlbumArt(imgURL);
       String imgFilename = "${localDir}albumArt.jpg";
-      await saveToFile(imgFilename, imgBytes);
+      await saveToFileBytes(imgFilename, imgBytes);
 
-      String title = getFeedTitle(xml);
-      String author = getFeedAuthor(xml);
-      String description = getFeedDescription(xml);
+      String title = _getFeedTitle(xml);
+      String author = _getFeedAuthor(xml);
+      String description = _getFeedDescription(xml);
       logDebugMsg("found title $title");
-      List<Episode> episodes = getEpisodes(xml);
-      _feedList.add(Feed(localDir, title, author, description, Image.file(File(imgFilename)), episodes));
+      List<Episode> episodes = _getEpisodes(xml);
+      _feedList.add(Feed(_highestFeedNumber, localDir, title, author, description, Image.file(File(imgFilename)), episodes));
+
+      String pubDate = _getPubDate(xml);
+      FeedConfig config = FeedConfig(url, pubDate);
+      saveFeedConfig(_highestFeedNumber, config);
     }
     catch (err)
     {
@@ -108,7 +109,45 @@ class DataModel extends ChangeNotifier
 
   //*********************************************
 
-  Future<void> loadAllFeedsFromDisk() async
+  Future<void> refreshAllFeeds() async
+  {
+    _isRefreshing = true;
+    notifyListeners();
+
+    for (Feed feed in _feedList)
+    {
+      await _refreshFeed(feed);
+    }
+
+    await _loadAllFeedsFromDisk();
+    _isRefreshing = false;
+    notifyListeners();
+  }
+
+  //*********************************************
+
+  Future<void> _refreshFeed(Feed feed) async
+  {
+    // TODO: what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode? should I delete the 11th episode?
+    // TODO: const MAX_EPISODES = 10? then use it here and in getEpisodes()
+
+    // TODO: if date in local xml is same as date in remote xml then don't save to disk
+    // TODO: should I ever re-grab the albumArt from the server?
+
+    FeedConfig config = await loadFeedConfig(feed.feedNumber);
+    Uint8List rssBytes = await _fetchRSS(config.url);
+    String xmlFilename = "${feed.localDir}feed.xml";
+    await saveToFileBytes(xmlFilename, rssBytes);
+
+    // TODO: allow user to refresh a single feed? if so need notifyListeners
+    //notifyListeners();
+  }
+
+  //*********************************************
+  //*********************************************
+  //*********************************************
+
+  Future<void> _loadAllFeedsFromDisk() async
   {
     _feedList = [];
     var path = await getLocalPath();
@@ -127,42 +166,28 @@ class DataModel extends ChangeNotifier
       {
         // TODO: move this to a separate function that takes in xml and returns Podcast instance, I don't want to duplicate
         // code here and in addPodcast
+        String feedNumberString = item.path.split(Platform.pathSeparator).last;
+        int feedNumberInt = int.parse(feedNumberString);
+
         String xmlFilename = "${item.path}${Platform.pathSeparator}feed.xml";
-        String text = await readFile(xmlFilename);
+        String text = await readFileString(xmlFilename);
         XmlDocument xml = XmlDocument.parse(text);
-        String title = getFeedTitle(xml);
-        String author = getFeedAuthor(xml);
-        String description = getFeedDescription(xml);
+        String title = _getFeedTitle(xml);
+        String author = _getFeedAuthor(xml);
+        String description = _getFeedDescription(xml);
         String albumArtPath = "${item.path}${Platform.pathSeparator}albumArt.jpg";
-        List<Episode> episodes = getEpisodes(xml);
+        List<Episode> episodes = _getEpisodes(xml);
         _feedList.add(
-          Feed(item.path, title, author, description, Image.file(File(albumArtPath)), episodes)
+          Feed(feedNumberInt, "${item.path}${Platform.pathSeparator}", title, author, description, Image.file(File(albumArtPath)), episodes)
         );
       }
     }
 
-    _feedList.sort((a, b) {
-      // - if less
-      // 0 if equal
-      // + if greater
-      if (a.localDir.length > b.localDir.length)
-      {
-        return 1;
-      }
-      else if (a.localDir.length < b.localDir.length)
-      {
-        return -1;
-      }
-      else 
-      {
-        return a.localDir.compareTo(b.localDir);
-      }
-    });
+    _feedList.sort((a, b) => a.feedNumber.compareTo(b.feedNumber));
 
     if (_feedList.isNotEmpty)
     {
-      String folder = _feedList.last.localDir.split(Platform.pathSeparator).last;
-      _highestFeedNumber = int.parse(folder);
+      _highestFeedNumber = _feedList.last.feedNumber;
     }
 
     logDebugMsg("_highestFeedNumber = $_highestFeedNumber");
@@ -175,42 +200,59 @@ class DataModel extends ChangeNotifier
 
   //*********************************************
 
-  Future<void> refreshAllFeeds() async
+  Future<void> saveFeedConfig(int feedNumber, FeedConfig config) async
   {
-    _isRefreshing = true;
-    notifyListeners();
+    String localDir = await getLocalPath();
+    localDir += "${Platform.pathSeparator}$feedNumber${Platform.pathSeparator}config.txt";
 
-    // TODO: call refreshFeed for each feed
-
-    // the url is in the xml file at 
-    // <atom:link href="https://talkpython.fm/episodes/rss" rel="self" type="application/rss+xml"/>
-    // or 
-    // <link>https://www.npr.org/podcasts/510289/planet-money</link>
-    // I don't think I should rely on that
-
-    // TODO: what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode? should I delete the 11th episode?
-    // TODO: const MAX_EPISODES = 10? then use it here and in getEpisodes()
-
-    // TODO: if date in local xml is same as date in remote xml then don't save to disk
-    // TODO: should I ever re-grab the albumArt from the server?
-
-    await loadAllFeedsFromDisk();
-    _isRefreshing = false;
-    notifyListeners();
+    await saveToFileString(localDir, config.toString());
   }
 
   //*********************************************
 
-  Future<void> refreshFeed(String localDir) async
+  Future<FeedConfig> loadFeedConfig(int feedNumber) async
   {
-    notifyListeners();
+    String localDir = await getLocalPath();
+    localDir += "${Platform.pathSeparator}$feedNumber${Platform.pathSeparator}config.txt";
+
+    String data = await readFileString(localDir);
+    FeedConfig config = FeedConfig.fromExisting(data);
+    return config;
   }
 
   //*********************************************
   //*********************************************
   //*********************************************
 
-  String getImgURLFromXML(XmlDocument xml)
+  String _getPubDate(XmlDocument xml)
+  {
+    // first element is <rss> then second element is <channel>
+    XmlElement? channel = xml.firstElementChild?.firstElementChild;
+    XmlElement? pubDate = channel?.getElement("pubDate");
+    if (pubDate != null)
+    {
+      return pubDate.innerText;
+    }
+
+    // if there is no top level pubDate then try the first item
+    XmlElement? item = channel?.getElement("item");
+    if (item != null)
+    {
+      XmlElement? pubDate = item.getElement("pubDate");
+      if (pubDate != null)
+      {
+        return pubDate.innerText;
+      }
+    }
+
+    // TODO: or should I just use a pubDate of .now()? could cause issues if a new podcast is released but they use a date before .now()
+
+    throw Exception("could not find pubDate in xml");
+  }
+
+  //*********************************************
+
+  String _getImgURLFromXML(XmlDocument xml)
   {
     // first element is <rss> then second element is <channel>
     XmlElement? channel = xml.firstElementChild?.firstElementChild;
@@ -235,7 +277,7 @@ class DataModel extends ChangeNotifier
 
   //*********************************************
 
-  String getFeedTitle(XmlDocument xml)
+  String _getFeedTitle(XmlDocument xml)
   {
     // this is a slower version of getting the channel element
     //XmlElement? rss = xml.getElement("rss");
@@ -254,7 +296,7 @@ class DataModel extends ChangeNotifier
 
   //*********************************************
 
-  String getFeedAuthor(XmlDocument xml)
+  String _getFeedAuthor(XmlDocument xml)
   {
     // first element is <rss> then second element is <channel>
     XmlElement? channel = xml.firstElementChild?.firstElementChild;
@@ -269,14 +311,14 @@ class DataModel extends ChangeNotifier
 
   //*********************************************
 
-  String getFeedDescription(XmlDocument xml)
+  String _getFeedDescription(XmlDocument xml)
   {
     // first element is <rss> then second element is <channel>
     XmlElement? channel = xml.firstElementChild?.firstElementChild;
     XmlElement? description = channel?.getElement("description");
     if (description != null)
     {
-      return removeHtmlTags(description.innerText);
+      return _removeHtmlTags(description.innerText);
     }
 
     throw Exception("could not find description in xml");
@@ -284,7 +326,7 @@ class DataModel extends ChangeNotifier
 
   //*********************************************
 
-  List<Episode> getEpisodes(XmlDocument xml)
+  List<Episode> _getEpisodes(XmlDocument xml)
   {
     XmlElement? channel = xml.firstElementChild?.firstElementChild;
     if (channel != null)
@@ -298,7 +340,7 @@ class DataModel extends ChangeNotifier
         XmlElement? pubDate = item.getElement("pubDate");
         if (title != null && description != null && pubDate != null)
         {
-          String descriptionNoHtml = removeHtmlTags(description.innerText);
+          String descriptionNoHtml = _removeHtmlTags(description.innerText);
           DateTime date = stringToDateTime(pubDate.innerText);
           episodes.add(Episode(
             // TODO: get localPath only if it has been downloaded
@@ -327,7 +369,7 @@ class DataModel extends ChangeNotifier
   //*********************************************
   //*********************************************
 
-  String removeHtmlTags(String input)
+  String _removeHtmlTags(String input)
   {
     // . means wildcard
     // dotAll means the wildcard . will match all characters including line terminators
@@ -345,7 +387,7 @@ class DataModel extends ChangeNotifier
 
   // TODO: separate the storage vs network functions?
 
-  Future<Uint8List> fetchRSS(String url) async
+  Future<Uint8List> _fetchRSS(String url) async
   {
     final resp = await http.get(Uri.parse(url));
     if (resp.statusCode ~/ 100 != 2)
@@ -357,7 +399,7 @@ class DataModel extends ChangeNotifier
 
   //*********************************************
 
-  Future<Uint8List> fetchAlbumArt(String url) async
+  Future<Uint8List> _fetchAlbumArt(String url) async
   {
     final resp = await http.get(Uri.parse(url));
     return resp.bodyBytes;

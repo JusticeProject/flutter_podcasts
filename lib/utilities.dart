@@ -71,7 +71,18 @@ String prettyPrintDate(DateTime date)
   DateTime now = DateTime.now();
   Duration diff = now.difference(date); // diff = now - date
 
-  if (diff.inDays == 1)
+  // TODO: what about if the date was published as a different time zone?, need to update stringToDateTime and dateTimeToString
+  // TODO: add x minutes ago?
+
+  if (diff.inHours == 1)
+  {
+    return "1 hour ago";
+  }
+  else if (diff.inHours < 24)
+  {
+    return "${diff.inHours} hours ago";
+  }
+  else if (diff.inDays == 1)
   {
     return "1 day ago";
   }
@@ -103,7 +114,7 @@ Future<String> getLocalPath() async
 
 //*************************************************************************************************
 
-Future<void> saveToFile(String filename, Uint8List bytes) async
+Future<void> saveToFileBytes(String filename, Uint8List bytes) async
 {
   File fd = await File(filename).create(recursive: true);
   await fd.writeAsBytes(bytes);
@@ -111,7 +122,15 @@ Future<void> saveToFile(String filename, Uint8List bytes) async
 
 //*************************************************************************************************
 
-Future<String> readFile(String filename) async
+Future<void> saveToFileString(String filename, String data) async
+{
+  File fd = await File(filename).create(recursive: true);
+  await fd.writeAsString(data);
+}
+
+//*************************************************************************************************
+
+Future<String> readFileString(String filename) async
 {
   File fd = File(filename);
   return await fd.readAsString();
