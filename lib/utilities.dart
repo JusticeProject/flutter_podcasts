@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 
 //*************************************************************************************************
 
@@ -27,6 +28,8 @@ void disableCertError()
 }
 
 //*************************************************************************************************
+//*************************************************************************************************
+//*************************************************************************************************
 
 void logDebugMsg(String msg)
 {
@@ -36,6 +39,8 @@ void logDebugMsg(String msg)
   }
 }
 
+//*************************************************************************************************
+//*************************************************************************************************
 //*************************************************************************************************
 
 DateTime stringToDateTime(String input)
@@ -82,4 +87,32 @@ String prettyPrintDate(DateTime date)
   {
     return DateFormat("MMM d, yyyy").format(date);
   }
+}
+
+//*************************************************************************************************
+//*************************************************************************************************
+//*************************************************************************************************
+
+Future<String> getLocalPath() async
+{
+  // TODO: android.permission.READ_EXTERNAL_STORAGE ??
+  var dir1 = await getApplicationCacheDirectory();
+  //logDebugMsg(dir1.path);
+  return dir1.path;
+}
+
+//*************************************************************************************************
+
+Future<void> saveToFile(String filename, Uint8List bytes) async
+{
+  File fd = await File(filename).create(recursive: true);
+  await fd.writeAsBytes(bytes);
+}
+
+//*************************************************************************************************
+
+Future<String> readFile(String filename) async
+{
+  File fd = File(filename);
+  return await fd.readAsString();
 }

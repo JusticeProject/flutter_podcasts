@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:xml/xml.dart';
 
 import 'data_structures.dart';
@@ -11,35 +10,40 @@ import 'utilities.dart';
 
 //*************************************************************************************************
 
-class StorageHandler
+class DataModel extends ChangeNotifier
 {
   int _highestFeedNumber = -1;
+  
+  List<Feed> _feedList = [];
+  List<Feed> get feedList => _feedList;
 
-  // Private constructor:
-  StorageHandler._privateConstructor();
-  // the singleton instance of this class:
-  static final StorageHandler _instance = StorageHandler._privateConstructor();
-  // factory that always produces the same singleton instance:
-  factory StorageHandler() {return _instance;}
+  bool _isInitializing = true;
+  bool get isInitializing => _isInitializing;
+
+  bool _isRefreshing = false;
+  bool get isRefreshing => _isRefreshing;
+
+  bool get isBusy => (_isInitializing || _isRefreshing);
 
   //*********************************************
 
-  Future<String> getLocalPath() async
+  // Constructor
+  DataModel()
   {
-    // TODO: android.permission.READ_EXTERNAL_STORAGE ??
-    var dir1 = await getApplicationCacheDirectory();
-    //logDebugMsg(dir1.path);
-    return dir1.path;
+    loadAllFeedsFromDisk();
   }
 
   //*********************************************
   //*********************************************
   //*********************************************
 
-  Future<Feed> addFeed(String url) async
+  Future<void> addFeed(String url) async
   {
     try
     {
+      _isRefreshing = true;
+      notifyListeners();
+
       // TODO: save url and date last retrieved in a .txt file, this will be used during refreshFeed
       // saveFeedConfig, loadFeedConfig, class FeedConfig{url, pubDate from last downloaded xml}
 
@@ -64,7 +68,7 @@ class StorageHandler
       String description = getFeedDescription(xml);
       logDebugMsg("found title $title");
       List<Episode> episodes = getEpisodes(xml);
-      return Feed(localDir, title, author, description, Image.file(File(imgFilename)), episodes);
+      _feedList.add(Feed(localDir, title, author, description, Image.file(File(imgFilename)), episodes));
     }
     catch (err)
     {
@@ -72,11 +76,18 @@ class StorageHandler
       _highestFeedNumber--;
       rethrow;
     }
+    finally
+    {
+      // for testing the button disabling
+      //await Future.delayed(Duration(seconds: 5));
+      _isRefreshing = false;
+      notifyListeners();
+    }
   }
 
   //*********************************************
 
-  Future<void> removeFeed(Feed feed) async
+  Future<void> removeFeed(int index) async
   {
     // TODO: what if the files are in use? what if the .mp3 is playing right now? I should stop (all?) playback first
     // maybe during loading I could remove files/folders that are marked for deletion
@@ -85,7 +96,9 @@ class StorageHandler
 
     try
     {
-      await Directory(feed.localDir).delete(recursive: true);
+      Feed feedToRemove = _feedList.removeAt(index);
+      await Directory(feedToRemove.localDir).delete(recursive: true);
+      notifyListeners();
     }
     catch (err)
     {
@@ -95,8 +108,9 @@ class StorageHandler
 
   //*********************************************
 
-  Future<List<Feed>> loadAllFeedsFromDisk() async
+  Future<void> loadAllFeedsFromDisk() async
   {
+    _feedList = [];
     var path = await getLocalPath();
     var dir = Directory(path);
     var itemStream = dir.list();
@@ -107,7 +121,6 @@ class StorageHandler
 
     // TODO: should I move the below to loadFeedFromDisk?
 
-    List<Feed> feedList = [];
     await for (var item in itemStream)
     {
       if (item is Directory)
@@ -122,13 +135,13 @@ class StorageHandler
         String description = getFeedDescription(xml);
         String albumArtPath = "${item.path}${Platform.pathSeparator}albumArt.jpg";
         List<Episode> episodes = getEpisodes(xml);
-        feedList.add(
+        _feedList.add(
           Feed(item.path, title, author, description, Image.file(File(albumArtPath)), episodes)
         );
       }
     }
 
-    feedList.sort((a, b) {
+    _feedList.sort((a, b) {
       // - if less
       // 0 if equal
       // + if greater
@@ -146,9 +159,9 @@ class StorageHandler
       }
     });
 
-    if (feedList.isNotEmpty)
+    if (_feedList.isNotEmpty)
     {
-      String folder = feedList.last.localDir.split(Platform.pathSeparator).last;
+      String folder = _feedList.last.localDir.split(Platform.pathSeparator).last;
       _highestFeedNumber = int.parse(folder);
     }
 
@@ -156,13 +169,17 @@ class StorageHandler
 
     // for testing the circular progress indicator
     //await Future.delayed(Duration(seconds: 5));
-    return feedList;
+    _isInitializing = false;
+    notifyListeners();
   }
 
   //*********************************************
 
-  Future<List<Feed>> refreshAllFeeds()
+  Future<void> refreshAllFeeds() async
   {
+    _isRefreshing = true;
+    notifyListeners();
+
     // TODO: call refreshFeed for each feed
 
     // the url is in the xml file at 
@@ -177,32 +194,16 @@ class StorageHandler
     // TODO: if date in local xml is same as date in remote xml then don't save to disk
     // TODO: should I ever re-grab the albumArt from the server?
 
-    return loadAllFeedsFromDisk();
+    await loadAllFeedsFromDisk();
+    _isRefreshing = false;
+    notifyListeners();
   }
 
   //*********************************************
 
-  void refreshFeed(String localDir)
+  Future<void> refreshFeed(String localDir) async
   {
-    
-  }
-
-  //*********************************************
-  //*********************************************
-  //*********************************************
-
-  Future<void> saveToFile(String filename, Uint8List bytes) async
-  {
-    File fd = await File(filename).create(recursive: true);
-    await fd.writeAsBytes(bytes);
-  }
-
-  //*********************************************
-
-  Future<String> readFile(String filename) async
-  {
-    File fd = File(filename);
-    return await fd.readAsString();
+    notifyListeners();
   }
 
   //*********************************************
