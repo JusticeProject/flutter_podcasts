@@ -19,7 +19,6 @@ class Feed
   final DateTime datePublishedUTC;
   int numEpisodesDownloaded = 0;
 
-  // TODO: add Episodes from the feed and Episodes that have been downloaded
   final List<Episode> episodes;
 }
 
@@ -51,13 +50,21 @@ class FeedConfig
 
 class Episode
 {
-  Episode({required this.localPath, 
+  Episode({
+    required this.localDir,
+    required this.filename, 
+    required this.guid,
+    required this.url,
     required this.title, 
     required this.description, 
     required this.descriptionNoHtml,
     required this.datePublishedUTC});
 
-  final String localPath;
+  final String localDir; 
+  String filename; // if filename isNotEmpty then it has been downloaded
+  final String guid;
+  final String url;
+
   final String title;
   final String description;
   final String descriptionNoHtml;

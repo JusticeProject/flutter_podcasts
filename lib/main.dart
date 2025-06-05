@@ -66,10 +66,30 @@ class LibraryPage extends StatefulWidget
 
 class _LibraryPageState extends State<LibraryPage>
 {
-  final ScrollController _scrollController = ScrollController();
-  List<Feed> _feedList = [];
-  int _tapCount = 0;
-  DateTime _lastTapTime = DateTime.now();
+  late final ScrollController _scrollController;
+  late List<Feed> _feedList;
+  late int _tapCount;
+  late DateTime _lastTapTime;
+
+  //*******************************************************
+
+  @override
+  void initState() {
+    _scrollController = ScrollController();
+    _feedList = [];
+    _tapCount = 0;
+    _lastTapTime = DateTime.now();
+    super.initState();
+  }
+
+  //*******************************************************
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _feedList = [];
+    super.dispose();
+  }
 
   //*******************************************************
 
@@ -140,25 +160,16 @@ class _LibraryPageState extends State<LibraryPage>
 
   Future<void> _onRefresh(DataModel dataModel)
   {
-    /*setState(() {
-      _isRefreshing = true;
-    });*/
-
     void futureError(err)
     {
       _showMessageToUser(err.toString());
     }
 
+    // TODO: for every feed that was updated, show the num episodes text as green, when tapping that FeedPreview
+    // need to clear that status, wrap with setState
+
     Future<void> future = dataModel.refreshAllFeeds().catchError(futureError);
     return future;
-  }
-
-  //*******************************************************
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 
   //*******************************************************
@@ -203,6 +214,7 @@ class _LibraryPageState extends State<LibraryPage>
                 _feedList = dataModel.feedList;
               }
   
+              // wrap the GridView with RefreshIndicator which allows you to swipe down to refresh
               return RefreshIndicator(
                 onRefresh: () => _onRefresh(dataModel),
                 child: GridView.builder(

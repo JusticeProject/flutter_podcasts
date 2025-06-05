@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'data_model.dart';
 import 'utilities.dart';
 import 'data_structures.dart';
 import 'episode_page.dart';
@@ -12,10 +15,11 @@ class FeedPage extends StatelessWidget
   final Feed feed;
 
   // TODO: Refresh, drag down on FeedPage?
-  // can query the DataModel for the updated Feed, pass an id/index/feed url to the DateModel so it knows which one?
+  // can query the DataModel for the updated Feed, pass an id/index/feed url to the DataModel so it knows which one?
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context)
+  {
     return Scaffold(
       // TODO: how can I make the AppBar disappear when I scroll down the page?
       appBar: AppBar(
@@ -100,13 +104,14 @@ class EpisodePreview extends StatelessWidget
 
   final Episode episode;
 
-  void _onDownloadEpisode()
+  void _onDownloadEpisode(DataModel dataModel) async
   {
     // TODO: implement downloading (or removing if already downloaded)
     // is there a download icon combined with progress indicator?
-    // TODO: what if multiple files are being downloaded at once?
-    // TODO: auto download?
-    logDebugMsg("downloading ${episode.title}");
+    // pause/cancel downloading? or prevent user from pressing while dataModel.isDownloading/isBusy?
+    // what if multiple files are being downloaded at once?
+    logDebugMsg("download requested for ${episode.title}");
+    await dataModel.fetchEpisode(episode);
   }
 
   void _onPlayEpisode()
@@ -116,7 +121,11 @@ class EpisodePreview extends StatelessWidget
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context)
+  {
+    //DataModel dataModel = Provider.of<DataModel>(context, listen: false);
+    DataModel dataModel = context.watch<DataModel>();
+
     return Container(
       padding: EdgeInsets.fromLTRB(15, 0, 15, 0),
       height: 150,
@@ -128,8 +137,8 @@ class EpisodePreview extends StatelessWidget
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Divider(),
-            Text(episode.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold)),
-            Text(episode.descriptionNoHtml, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+            Text(episode.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Text(episode.descriptionNoHtml, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey)),
             // TODO: 3 dots icon on right side which shows bottom sheet: Mark as Played/Unplayed, Download?
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -146,11 +155,12 @@ class EpisodePreview extends StatelessWidget
                 const Text("unplayed"), // TODO: played vs 40 min vs 38 min left + progress bar
                 Spacer(),
                 IconButton(
-                  onPressed: _onDownloadEpisode,
-                  icon: Icon(Icons.download)
+                  onPressed: () => _onDownloadEpisode(dataModel),
+                  icon: Icon(episode.filename.isEmpty ? Icons.download : Icons.download_done)
                 ),
                 IconButton(
                   onPressed: _onPlayEpisode, 
+                  // TODO: disable the play button until it is downloaded
                   icon: Icon(Icons.play_arrow))
               ]
             )
