@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:xml/xml.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:timezone/timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 
 //*************************************************************************************************

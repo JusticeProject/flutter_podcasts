@@ -68,22 +68,42 @@ class _LibraryPageState extends State<LibraryPage>
 {
   final ScrollController _scrollController = ScrollController();
   List<Feed> _feedList = [];
+  int _tapCount = 0;
+  DateTime _lastTapTime = DateTime.now();
 
   //*******************************************************
 
   void _showMessageToUser(String msg)
   {
     // widget in this case refers to the corresponding StatefulWidget
-    widget.scaffoldMessengerKey.currentState!.showSnackBar(SnackBar(content: Text(msg)));
+    widget.scaffoldMessengerKey.currentState!.showSnackBar(SnackBar(content: Text(msg), duration: Duration(seconds: 10)));
   }
 
   //*******************************************************
 
   Future<void> _onPopulateLibrary(DataModel dataModel) async
   {
-    for (String url in urls)
+    DateTime now = DateTime.now();
+    if (now.difference(_lastTapTime).inSeconds < 3)
     {
-      await dataModel.addFeed(url);
+      _tapCount++;
+      logDebugMsg("tap count is $_tapCount");
+    }
+    else
+    {
+      _tapCount = 0;
+      logDebugMsg("tap count reset to 0");
+    }
+    _lastTapTime = now;
+    
+    if (_tapCount > 6)
+    {
+      _tapCount = 0;
+
+      for (String url in urls)
+      {
+        await dataModel.addFeed(url);
+      }
     }
   }
 
@@ -124,10 +144,12 @@ class _LibraryPageState extends State<LibraryPage>
       _isRefreshing = true;
     });*/
 
-    Future<void> future = dataModel.refreshAllFeeds();
+    void futureError(err)
+    {
+      _showMessageToUser(err.toString());
+    }
 
-    // TODO: no auto downloads? no auto refresh?
-    
+    Future<void> future = dataModel.refreshAllFeeds().catchError(futureError);
     return future;
   }
 
@@ -164,7 +186,6 @@ class _LibraryPageState extends State<LibraryPage>
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
-        // TODO: for testing only
         actions: [IconButton(onPressed: () => _onPopulateLibrary(dataModel), icon: Icon(Icons.rss_feed))],
       ),
       body: SafeArea(
@@ -348,8 +369,7 @@ void showRemoveFeedDialog(BuildContext context, String title, int index, void Fu
 
 //*************************************************************************************************
 
-// RSS feeds:
-// TODO: remove these sample feeds
+// my default RSS feeds
 List<String> urls = [
 "https://feeds.twit.tv/sn.xml",
 "https://feeds.twit.tv/uls.xml",

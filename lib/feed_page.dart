@@ -12,7 +12,7 @@ class FeedPage extends StatelessWidget
   final Feed feed;
 
   // TODO: Refresh, drag down on FeedPage?
-  // can query the StorageHandler for the updated Feed, pass an id/index/feed url to the StorageHandler so it knows which one?
+  // can query the DataModel for the updated Feed, pass an id/index/feed url to the DateModel so it knows which one?
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +105,7 @@ class EpisodePreview extends StatelessWidget
     // TODO: implement downloading (or removing if already downloaded)
     // is there a download icon combined with progress indicator?
     // TODO: what if multiple files are being downloaded at once?
+    // TODO: auto download?
     logDebugMsg("downloading ${episode.title}");
   }
 

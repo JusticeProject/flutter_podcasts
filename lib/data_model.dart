@@ -12,7 +12,10 @@ import 'utilities.dart';
 
 class DataModel extends ChangeNotifier
 {
+  // Keeps track of what feedNumber to use next when adding a new podcast feed. Each podcast is stored in its own
+  // directory, with the directory name being "0" or "5" which corresponds to its feedNumber;
   int _highestFeedNumber = -1;
+  final int MAX_NUM_EPISODES = 10;
   
   List<Feed> _feedList = [];
   List<Feed> get feedList => _feedList;
@@ -39,13 +42,15 @@ class DataModel extends ChangeNotifier
 
   Future<void> addFeed(String url) async
   {
+    String localDir = "";
+
     try
     {
       _isRefreshing = true;
       notifyListeners();
 
       _highestFeedNumber++;
-      String localDir = await getLocalPath();
+      localDir = await getLocalPath();
       localDir = combinePaths(localDir, "$_highestFeedNumber");
 
       Uint8List rssBytes = await _fetchRSS(url);
@@ -60,9 +65,15 @@ class DataModel extends ChangeNotifier
     }
     catch (err)
     {
-      // TODO: cleanup any folders/files that were created
+      // cleanup any folders/files that were created
+      if (localDir.isNotEmpty && await Directory(localDir).exists())
+      {
+        await Directory(localDir).delete(recursive: true);
+        logDebugMsg("directory removed");
+      }
+
       _highestFeedNumber--;
-      rethrow;
+      rethrow; // even with this rethrow the finally clause still runs
     }
     finally
     {
@@ -101,12 +112,21 @@ class DataModel extends ChangeNotifier
     _isRefreshing = true;
     notifyListeners();
 
+    String? errorMsg;
     bool needToLoadFromDisk = false;
 
     for (Feed feed in _feedList)
     {
-      bool feedHasNewData = await _refreshFeed(feed);
-      needToLoadFromDisk = needToLoadFromDisk || feedHasNewData;
+      try
+      {
+        bool feedHasNewData = await _refreshFeed(feed);
+        needToLoadFromDisk = needToLoadFromDisk || feedHasNewData;
+      }
+      catch (err)
+      {
+        String msgWithoutPrefix = err.toString().replaceFirst("Exception: ", "");
+        errorMsg = "Error refreshing ${feed.title}: $msgWithoutPrefix";
+      }
     }
 
     if (needToLoadFromDisk)
@@ -116,6 +136,11 @@ class DataModel extends ChangeNotifier
 
     _isRefreshing = false;
     notifyListeners();
+
+    if (errorMsg != null)
+    {
+      throw Exception(errorMsg);
+    }
   }
 
   //*********************************************
@@ -124,12 +149,9 @@ class DataModel extends ChangeNotifier
   Future<bool> _refreshFeed(Feed feed) async
   {
     // TODO: what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode? should I delete the 11th episode?
-    // TODO: const MAX_EPISODES = 10? then use it here and in getEpisodes()
+    // use MAX_NUM_EPISODES
 
-    // TODO: try/catch?
-
-    // TODO: if number of episodes is different between local and remote XML then save xml to disk?
-    // TODO: should I ever re-grab the albumArt from the server?
+    // TODO: if number of episodes is different between local and remote XML then save xml to disk? (they didn't update the pubDate)
 
     FeedConfig config = await loadFeedConfig(feed.localDir);
     Uint8List rssBytes = await _fetchRSS(config.url);
@@ -152,9 +174,6 @@ class DataModel extends ChangeNotifier
       logDebugMsg("${feed.title} already up to date");
       return false;
     }
-
-    // TODO: allow user to refresh a single feed? if so need notifyListeners
-    //notifyListeners();
   }
 
   //*********************************************
@@ -274,8 +293,6 @@ class DataModel extends ChangeNotifier
       }
     }
 
-    // TODO: or should I just use a pubDate of .now()? could cause issues if a new podcast is released but they use a date before .now()
-
     throw Exception("could not find pubDate in xml");
   }
 
@@ -381,17 +398,18 @@ class DataModel extends ChangeNotifier
           );
         }
 
-        // TODO: only get the 10 most recent episodes? some feeds have ALL the episodes
-        if (episodes.length >= 10)
+        // some feeds have ALL the episodes but we are limiting it to MAX_NUM_EPISODES
+        if (episodes.length >= MAX_NUM_EPISODES)
         {
           break;
         }
       }
+
       return episodes;
     }
 
-    // TODO: throw Exception or return empty List?
-    throw Exception("could not find episodes");
+    // nothing found, so no episodes
+    return <Episode>[];
   }
 
   //*********************************************
@@ -413,8 +431,6 @@ class DataModel extends ChangeNotifier
   //*********************************************
   //*********************************************
   //*********************************************
-
-  // TODO: separate the storage vs network functions?
 
   Future<Uint8List> _fetchRSS(String url) async
   {
