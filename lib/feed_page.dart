@@ -137,7 +137,8 @@ class EpisodePreview extends StatelessWidget
                 // TODO: if the date says 1 hour ago then wait 10 hours... it will still say 1 hour ago
                 // Future.periodic in the Constructor? or initState (StatefulWidget)? cancel it in onDispose, use logDebugMsg to make sure 
                 // it gets called. Wrap with setState. String _prettyPrintDate member variable.
-                Text(prettyPrintDate(episode.date)),
+                // Or just have the user refresh all feeds? But it may not show the updated time if there were no new xml files saved.
+                Text(dateTimeUTCToPrettyPrint(episode.datePublishedUTC)),
                 SizedBox(width: 8),
                 Icon(Icons.circle, size: 5),
                 SizedBox(width: 8),

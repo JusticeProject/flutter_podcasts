@@ -3,6 +3,9 @@ import 'dart:typed_data';
 
 import 'package:xml/xml.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:timezone/timezone.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 //*************************************************************************************************
 
@@ -18,20 +21,67 @@ class MyHttpOverrides extends HttpOverrides{
 
 //*************************************************************************************************
 
+DateTime stringToDateTime(String input)
+{
+  DateTime dateUTC = DateFormat("E, dd MMM yyyy HH:mm:ss").parse(input, true);
+
+  if (input.length == 31)
+  {
+    int offsetHours = int.parse(input.substring(26, 29));
+    print(offsetHours);
+    dateUTC = dateUTC.subtract(Duration(hours: offsetHours));
+  }
+  else if (input.length == 29)
+  {
+    String abbreviation = input.substring(26, 29);
+    if (abbreviation != "UTC" && abbreviation != "GMT")
+    {
+      if (abbreviation == "PDT")
+      {
+        dateUTC = dateUTC.subtract(Duration(hours: -7));
+      }
+    }
+  }
+
+  DateTime dateLocal = dateUTC.toLocal();
+
+
+
+  //TimeZone.UTC
+  //TimeZone zone = TimeZone(0, isDst: false, abbreviation: 'PDT');
+  //final pdt = tz.getLocation('America/Los_Angeles');
+  //return tz.TZDateTime.from(dateTimeWithoutZone, pdt);
+
+  return dateLocal;
+}
+
+//*************************************************************************************************
+
 void main(List<String> args) async
 {
-  /*List<String> names = await loadAllAlbumArt();
-  for (var name in names)
-  {
-    print(name);
-  }*/
+  tz.initializeTimeZones();
+  // for (var entry in timeZoneDatabase.locations.entries)
+  // {
+  //   if (entry.key.contains("CST") || entry.key.contains("PDT") || entry.key.contains("PST") || entry.key.contains("Chicago"))
+  //   {
+  //     print(entry.key);
+  //   }
+  // }
 
-  for (int i = 0; i < 1; i++)
+  List<String> times = [
+    "Fri, 30 May 2025 20:24:00 -0000",
+    "Tue, 03 Jun 2025 21:00:05 PDT",
+    "Thu, 22 May 2025 15:43:21 +0000",
+    "Mon, 19 May 2025 12:00:00 -0800",
+    "Fri, 29 Sep 2023 19:00:00 GMT"];
+
+  for (String time in times)
   {
-    String text = await readFile("bin/$i.xml");
-    XmlDocument xml = XmlDocument.parse(text);
-    String description = getEpisodeDescription(xml);
-    print(description);
+    print("converting $time");
+    DateTime result = stringToDateTime(time);
+    print(result);
+    print(result.timeZoneName);
+    print(result.timeZoneOffset);
   }
 
   print("main done");

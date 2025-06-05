@@ -55,7 +55,7 @@ class DataModel extends ChangeNotifier
       Feed feed = await _gatherFeedInfo(localDir, true);
       _feedList.add(feed);
 
-      FeedConfig config = FeedConfig(url, dateTimeToString(feed.date));
+      FeedConfig config = FeedConfig(url, feed.datePublishedUTC);
       saveFeedConfig(localDir, config);
     }
     catch (err)
@@ -126,6 +126,8 @@ class DataModel extends ChangeNotifier
     // TODO: what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode? should I delete the 11th episode?
     // TODO: const MAX_EPISODES = 10? then use it here and in getEpisodes()
 
+    // TODO: try/catch?
+
     // TODO: if number of episodes is different between local and remote XML then save xml to disk?
     // TODO: should I ever re-grab the albumArt from the server?
 
@@ -134,13 +136,14 @@ class DataModel extends ChangeNotifier
     String rssText = String.fromCharCodes(rssBytes);
     XmlDocument xml = XmlDocument.parse(rssText);
     String remotePubDate = _getPubDate(xml);
+    DateTime remoteDatePublishedUTC = stringToDateTimeUTC(remotePubDate);
 
-    if (isExpiredString(config.dateString, remotePubDate))
+    if (isExpired(config.datePublishedUTC, remoteDatePublishedUTC))
     {
       logDebugMsg("saving new XML for ${feed.title}");
       String xmlFilename = combinePaths(feed.localDir, "feed.xml");
       await saveToFileBytes(xmlFilename, rssBytes);
-      config.dateString = remotePubDate;
+      config.datePublishedUTC = remoteDatePublishedUTC;
       saveFeedConfig(feed.localDir, config);
       return true;
     }
@@ -178,13 +181,13 @@ class DataModel extends ChangeNotifier
     String title = _getFeedTitle(xml);
     String author = _getFeedAuthor(xml);
     String description = _getFeedDescription(xml);
-    logDebugMsg("found title $title");
+    //logDebugMsg("found title $title");
     List<Episode> episodes = _getEpisodes(xml);
 
     String dateString = _getPubDate(xml);
-    DateTime date = stringToDateTime(dateString);
+    DateTime dateUTC = stringToDateTimeUTC(dateString);
 
-    Feed feed = Feed(feedNumberInt, localDir, title, author, description, Image.file(File(imgFilename)), date, episodes);
+    Feed feed = Feed(feedNumberInt, localDir, title, author, description, Image.file(File(imgFilename)), dateUTC, episodes);
     return feed;
   }
 
@@ -367,14 +370,14 @@ class DataModel extends ChangeNotifier
         if (title != null && description != null && pubDate != null)
         {
           String descriptionNoHtml = _removeHtmlTags(description.innerText);
-          DateTime date = stringToDateTime(pubDate.innerText);
+          DateTime dateUTC = stringToDateTimeUTC(pubDate.innerText);
           episodes.add(Episode(
             // TODO: get localPath only if it has been downloaded
             localPath: "", 
             title: title.innerText, 
             description: description.innerText, 
             descriptionNoHtml: descriptionNoHtml,
-            date: date)
+            datePublishedUTC: dateUTC)
           );
         }
 

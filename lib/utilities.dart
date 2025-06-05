@@ -43,36 +43,59 @@ void logDebugMsg(String msg)
 //*************************************************************************************************
 //*************************************************************************************************
 
-DateTime stringToDateTime(String input)
+DateTime stringToDateTimeUTC(String input)
 {
+  // TODO: need better timezone support, DateFormat doesn't have the Z and zzz format specifiers implemented yet.
+  // The following is kinda customized for the podcasts I listen to. And I don't think it will handle daylight savings time.
   try
   {
-    DateTime date = DateFormat("E, dd MMM yyyy HH:mm:ss").parse(input);
-    return date;
+    DateTime dateUTC = DateFormat("E, dd MMM yyyy HH:mm:ss").parse(input, true);
+
+    if (input.length == 31)
+    {
+      // it has the format -0800 or +0000
+      int offsetHours = int.parse(input.substring(26, 29));
+      dateUTC = dateUTC.subtract(Duration(hours: offsetHours));
+    }
+    else if (input.length == 29)
+    {
+      String abbreviation = input.substring(26, 29);
+      if (abbreviation != "UTC" && abbreviation != "GMT")
+      {
+        if (abbreviation == "PDT")
+        {
+          dateUTC = dateUTC.subtract(Duration(hours: -7));
+        }
+      }
+    }
+
+    return dateUTC;
   }
   catch (err)
   {
     logDebugMsg(err.toString());
-    return DateTime.now();
+    rethrow;
   }
 }
 
 //*************************************************************************************************
 
-String dateTimeToString(DateTime input)
+String dateTimeUTCToStringUTC(DateTime input)
 {
+  // going to a String we will always assume UTC so there is no timezone info at the end
   return DateFormat("E, dd MMM yyyy HH:mm:ss").format(input);
 }
 
 //*************************************************************************************************
 
-String prettyPrintDate(DateTime date)
+String dateTimeUTCToPrettyPrint(DateTime input)
 {
+  DateTime dateLocal = input.toLocal();
   DateTime now = DateTime.now();
-  Duration diff = now.difference(date); // diff = now - date
+  Duration diff = now.difference(dateLocal); // diff = now - dateLocal
 
-  // TODO: what about if the date was published as a different time zone?, need to update stringToDateTime and dateTimeToString
   // TODO: add x minutes ago? or return the string "now"?
+  // what if the difference is negative?
 
   if (diff.inHours == 1)
   {
@@ -90,13 +113,13 @@ String prettyPrintDate(DateTime date)
   {
     return "${diff.inDays} days ago";
   }
-  else if (now.year == date.year)
+  else if (now.year == dateLocal.year)
   {
-    return DateFormat("MMM d").format(date);
+    return DateFormat("MMM d").format(dateLocal);
   }
   else
   {
-    return DateFormat("MMM d, yyyy").format(date);
+    return DateFormat("MMM d, yyyy").format(dateLocal);
   }
 }
 
@@ -105,13 +128,6 @@ String prettyPrintDate(DateTime date)
 bool isExpired(DateTime localCacheTime, DateTime remoteTime)
 {
   return remoteTime.isAfter(localCacheTime);
-}
-
-//*************************************************************************************************
-
-bool isExpiredString(String localCacheTime, String remoteTime)
-{
-  return isExpired(stringToDateTime(localCacheTime), stringToDateTime(remoteTime));
 }
 
 //*************************************************************************************************
