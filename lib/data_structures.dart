@@ -17,6 +17,7 @@ class Feed
   final Image albumArt;
 
   final DateTime datePublishedUTC;
+  bool newEpisodesOnLastRefresh = false;
   int numEpisodesOnDisk = 0;
   int numEpisodesDownloading = 0;
 

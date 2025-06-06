@@ -122,25 +122,34 @@ class DataModel extends ChangeNotifier
     notifyListeners();
 
     String? errorMsg;
-    bool needToLoadFromDisk = false;
 
-    for (Feed feed in _feedList)
+    List<bool> feedHasNewData = List<bool>.filled(_feedList.length, false);
+
+    for (int i = 0; i < _feedList.length; i++)
     {
       try
       {
-        bool feedHasNewData = await _refreshFeed(feed);
-        needToLoadFromDisk = needToLoadFromDisk || feedHasNewData;
+        feedHasNewData[i] = await _refreshFeed(_feedList[i]);
       }
       catch (err)
       {
         String msgWithoutPrefix = err.toString().replaceFirst("Exception: ", "");
-        errorMsg = "Error refreshing ${feed.title}: $msgWithoutPrefix";
+        errorMsg = "Error refreshing ${_feedList[i].title}: $msgWithoutPrefix";
       }
     }
 
-    if (needToLoadFromDisk)
+    for (int i = 0; i < feedHasNewData.length; i++)
     {
-      await _loadAllFeedsFromDisk();
+      if (feedHasNewData[i])
+      {
+        await _loadAllFeedsFromDisk();
+        break;
+      }
+    }
+
+    for (int i = 0; i < _feedList.length; i++)
+    {
+      _feedList[i].newEpisodesOnLastRefresh |= feedHasNewData[i];
     }
 
     _isRefreshing = false;

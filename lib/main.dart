@@ -165,11 +165,24 @@ class _LibraryPageState extends State<LibraryPage>
       _showMessageToUser(err.toString());
     }
 
-    // TODO: for every feed that was updated, show the num episodes text as green, when tapping that FeedPreview
-    // need to clear that status, wrap with setState
-
     Future<void> future = dataModel.refreshAllFeeds().catchError(futureError);
     return future;
+  }
+
+  //*******************************************************
+
+  void _onFeedPreviewTapped(BuildContext context, Feed feed)
+  {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => FeedPage(feed: feed)));
+
+    if (feed.newEpisodesOnLastRefresh)
+    {
+      setState(() {
+        // When tapping the FeedPreview we need to clear the newEpisode status.
+        // TODO: should I call DataModel.markFeedAsRead() which in turn calls notifyListeners?
+        feed.newEpisodesOnLastRefresh = false;
+      });
+    }
   }
 
   //*******************************************************
@@ -233,8 +246,7 @@ class _LibraryPageState extends State<LibraryPage>
                     Feed feed = _feedList[index];
                     return GestureDetector(
                       // disable tapping on each albumArt while refreshing
-                      onTap: dataModel.isBusy ? null : () => 
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => FeedPage(feed: feed))),
+                      onTap: dataModel.isBusy ? null : () => _onFeedPreviewTapped(context, feed),
                       // disable removing the podcast feed while refreshing, or while downloading episodes for this feed
                       onLongPress: (dataModel.isBusy || feed.numEpisodesDownloading > 0) ? null : () => 
                         showRemoveFeedDialog(context, feed.title, index, _onRemoveFeed), 
@@ -277,17 +289,19 @@ class FeedPreview extends StatelessWidget
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         feed.albumArt,
-        // TODO: it would be nice to display the title too, but due to the unforseen lengths this can cause out of bounds issues
-        // I could set the maxLines = 1, then overflow: fade or ellipsis
-        /*Padding(
-          padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-          child: Text(podcast.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ),*/
         Padding(
           padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-          child: Text(
-            "${feed.numEpisodesOnDisk} episode${feed.numEpisodesOnDisk == 1 ? '' : 's'}",
-            style: const TextStyle(fontWeight: FontWeight.w500)
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                "${feed.numEpisodesOnDisk} episode${feed.numEpisodesOnDisk == 1 ? '' : 's'}",
+                style: const TextStyle(fontWeight: FontWeight.w500)
+              ),
+              SizedBox(width: 10),
+              if (feed.newEpisodesOnLastRefresh)
+                Icon(Icons.circle, size: 9, color: Theme.of(context).colorScheme.primary)
+            ],
           ),
         ),
       ],
@@ -394,6 +408,7 @@ List<String> urls = [
 "https://makingembeddedsystems.libsyn.com/rss",
 "https://talkpython.fm/episodes/rss",
 "https://feeds.simplecast.com/4T39_jAj", // StarTalk
+"https://pinecast.com/feed/the-minnmax-show",
 "https://feeds.megaphone.fm/ignbeyond",
 "https://feeds.megaphone.fm/ignunlocked",
 "https://feeds.megaphone.fm/unfiltered",

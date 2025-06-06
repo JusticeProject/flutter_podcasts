@@ -151,7 +151,9 @@ class EpisodePreview extends StatelessWidget
                 DownloadButton(episode: episode),
                 IconButton(
                   onPressed: episode.filename.isEmpty ? () {} : _onPlayEpisode, 
-                  icon: Icon(episode.filename.isEmpty ? Icons.play_arrow_outlined : Icons.play_arrow))
+                  icon: Icon(episode.filename.isEmpty ? Icons.play_arrow_outlined : Icons.play_arrow,
+                    color: episode.filename.isEmpty ? Theme.of(context).disabledColor : null,
+                  ))
               ]
             )
           ],
@@ -182,6 +184,8 @@ class DownloadButton extends StatelessWidget
     catch (err)
     {
       // TODO: show SnackBar on error
+      // can I store the scaffoldMessengerKey in DataModel so anyone can grab it?
+      // or can I call a method on dataModel that will then notify some subscriber, that subscriber will display the SnackBar?
     }
   }
 
@@ -221,7 +225,7 @@ class DownloadButton extends StatelessWidget
       // show download complete button, can be tapped to remove the download
       return IconButton(
         onPressed: () => _onRemoveDownloadedEpisode(dataModel),
-        icon: Icon(Icons.download_done)
+        icon: Icon(Icons.download_done, color: Theme.of(context).colorScheme.primary)
       );
     }
   }
