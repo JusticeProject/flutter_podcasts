@@ -172,7 +172,6 @@ class DownloadButton extends StatelessWidget
 
   void _onDownloadEpisode(DataModel dataModel) async
   {
-    // TODO: what if multiple files are being downloaded at once?
     logDebugMsg("download requested for ${episode.title}");
     try
     {
@@ -188,7 +187,15 @@ class DownloadButton extends StatelessWidget
 
   void _onRemoveDownloadedEpisode(DataModel dataModel) async
   {
-    // TODO: remove download, but show confirmation dialog first, numEpisodesOnDisk--
+    logDebugMsg("removing episode ${episode.title}");
+    try
+    {
+      await dataModel.removeEpisode(episode);
+    }
+    catch (err)
+    {
+      dataModel.showMessageToUser(err.toString());
+    }
   }
 
   //*******************************************************
@@ -211,16 +218,31 @@ class DownloadButton extends StatelessWidget
     {
       // enable download button
       return IconButton(
-        onPressed: () => _onDownloadEpisode(dataModel),
-        icon: Icon(Icons.download)
+        icon: Icon(Icons.download),
+        onPressed: () => _onDownloadEpisode(dataModel)
       );
     }
     else
     {
       // show download complete button, can be tapped to remove the download
       return IconButton(
-        onPressed: () => _onRemoveDownloadedEpisode(dataModel),
-        icon: Icon(Icons.download_done, color: Theme.of(context).colorScheme.primary)
+        icon: Icon(Icons.download_done, color: Theme.of(context).colorScheme.primary),
+        onPressed: () {
+          showDialog(context: context, builder: (context) {
+            return AlertDialog(
+              title: Text("Remove downloaded episode?"),
+              actions: [
+                TextButton(child: const Text('Cancel'), onPressed: () => Navigator.of(context).pop()),
+                TextButton(child: const Text('Remove'), onPressed: () {
+                    _onRemoveDownloadedEpisode(dataModel);
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          });
+        },
+        
       );
     }
   }

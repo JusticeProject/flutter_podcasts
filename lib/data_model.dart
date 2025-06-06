@@ -379,4 +379,22 @@ class DataModel extends ChangeNotifier
       notifyListeners();
     }
   }
+
+  //*********************************************
+
+  Future<void> removeEpisode(Episode episode) async
+  {
+    if (episode.filename.isNotEmpty)
+    {
+      String fullLocalPath = combinePaths(episode.localDir, episode.filename);
+      if (await File(fullLocalPath).exists())
+      {
+        await File(fullLocalPath).delete();
+        episode.filename = "";
+        Feed feed = _feedList.firstWhere((element) => element.localDir == episode.localDir);
+        feed.numEpisodesOnDisk--;
+        notifyListeners();
+      }
+    }
+  }
 }
