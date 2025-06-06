@@ -17,7 +17,8 @@ class Feed
   final Image albumArt;
 
   final DateTime datePublishedUTC;
-  int numEpisodesDownloaded = 0;
+  int numEpisodesOnDisk = 0;
+  int numEpisodesDownloading = 0;
 
   final List<Episode> episodes;
 }
@@ -64,6 +65,7 @@ class Episode
   String filename; // if filename isNotEmpty then it has been downloaded
   final String guid;
   final String url;
+  bool isDownloading = false;
 
   final String title;
   final String description;

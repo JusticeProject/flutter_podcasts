@@ -104,15 +104,7 @@ class EpisodePreview extends StatelessWidget
 
   final Episode episode;
 
-  void _onDownloadEpisode(DataModel dataModel) async
-  {
-    // TODO: implement downloading (or removing if already downloaded)
-    // is there a download icon combined with progress indicator?
-    // pause/cancel downloading? or prevent user from pressing while dataModel.isDownloading/isBusy?
-    // what if multiple files are being downloaded at once?
-    logDebugMsg("download requested for ${episode.title}");
-    await dataModel.fetchEpisode(episode);
-  }
+  //*******************************************************
 
   void _onPlayEpisode()
   {
@@ -120,11 +112,13 @@ class EpisodePreview extends StatelessWidget
     logDebugMsg("playing ${episode.title}");
   }
 
+  //*******************************************************
+
   @override
   Widget build(BuildContext context)
   {
     //DataModel dataModel = Provider.of<DataModel>(context, listen: false);
-    DataModel dataModel = context.watch<DataModel>();
+    context.watch<DataModel>();
 
     return Container(
       padding: EdgeInsets.fromLTRB(15, 0, 15, 0),
@@ -139,7 +133,7 @@ class EpisodePreview extends StatelessWidget
             const Divider(),
             Text(episode.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
             Text(episode.descriptionNoHtml, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey)),
-            // TODO: 3 dots icon on right side which shows bottom sheet: Mark as Played/Unplayed, Download?
+            // TODO: 3 dots icon on right side which shows bottom sheet: Mark as Played/Unplayed, no download
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -154,19 +148,81 @@ class EpisodePreview extends StatelessWidget
                 SizedBox(width: 8),
                 const Text("unplayed"), // TODO: played vs 40 min vs 38 min left + progress bar
                 Spacer(),
+                DownloadButton(episode: episode),
                 IconButton(
-                  onPressed: () => _onDownloadEpisode(dataModel),
-                  icon: Icon(episode.filename.isEmpty ? Icons.download : Icons.download_done)
-                ),
-                IconButton(
-                  onPressed: _onPlayEpisode, 
-                  // TODO: disable the play button until it is downloaded
-                  icon: Icon(Icons.play_arrow))
+                  onPressed: episode.filename.isEmpty ? () {} : _onPlayEpisode, 
+                  icon: Icon(episode.filename.isEmpty ? Icons.play_arrow_outlined : Icons.play_arrow))
               ]
             )
           ],
         ),
       ),
     );
+  }
+}
+
+//*************************************************************************************************
+
+class DownloadButton extends StatelessWidget
+{
+  const DownloadButton({super.key, required this.episode});
+
+  final Episode episode;
+
+  //*******************************************************
+
+  void _onDownloadEpisode(DataModel dataModel) async
+  {
+    // TODO: what if multiple files are being downloaded at once?
+    logDebugMsg("download requested for ${episode.title}");
+    try
+    {
+      await dataModel.fetchEpisode(episode);
+    }
+    catch (err)
+    {
+      // TODO: show SnackBar on error
+    }
+  }
+
+  //*******************************************************
+
+  void _onRemoveDownloadedEpisode(DataModel dataModel) async
+  {
+    // TODO: remove download, but show confirmation dialog first, numEpisodesOnDisk--
+  }
+
+  //*******************************************************
+
+  @override
+  Widget build(BuildContext context)
+  {
+    DataModel dataModel = context.watch<DataModel>();
+
+    if (episode.isDownloading)
+    {
+      // TODO: the CircularProgressIndicator can take a value from 0 to 1 to show the progress
+
+      // Wrap the indicator with a GestureDetector so we can disable tapping on it
+      return GestureDetector(
+        onTap: () {},
+        child: CircularProgressIndicator());
+    }
+    else if (episode.filename.isEmpty)
+    {
+      // enable download button
+      return IconButton(
+        onPressed: () => _onDownloadEpisode(dataModel),
+        icon: Icon(Icons.download)
+      );
+    }
+    else
+    {
+      // show download complete button, can be tapped to remove the download
+      return IconButton(
+        onPressed: () => _onRemoveDownloadedEpisode(dataModel),
+        icon: Icon(Icons.download_done)
+      );
+    }
   }
 }

@@ -96,7 +96,7 @@ class _LibraryPageState extends State<LibraryPage>
   void _showMessageToUser(String msg)
   {
     // widget in this case refers to the corresponding StatefulWidget
-    widget.scaffoldMessengerKey.currentState!.showSnackBar(SnackBar(content: Text(msg), duration: Duration(seconds: 10)));
+    widget.scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text(msg), duration: Duration(seconds: 10)));
   }
 
   //*******************************************************
@@ -216,6 +216,7 @@ class _LibraryPageState extends State<LibraryPage>
   
               // wrap the GridView with RefreshIndicator which allows you to swipe down to refresh
               return RefreshIndicator(
+                // if DataModel is downloading then the refresh will stop immediately
                 onRefresh: () => _onRefresh(dataModel),
                 child: GridView.builder(
                   physics: const AlwaysScrollableScrollPhysics(), // this ensures you can drag down to refresh even if the library is too small to scroll
@@ -229,13 +230,15 @@ class _LibraryPageState extends State<LibraryPage>
                   padding: EdgeInsets.all(18),
                   itemCount: _feedList.length,
                   itemBuilder: (context, index) {
+                    Feed feed = _feedList[index];
                     return GestureDetector(
                       // disable tapping on each albumArt while refreshing
                       onTap: dataModel.isBusy ? null : () => 
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => FeedPage(feed: _feedList[index]))),
-                      onLongPress: dataModel.isBusy ? null : () => 
-                        showRemoveFeedDialog(context, _feedList[index].title, index, _onRemoveFeed), 
-                      child: FeedPreview(feed: _feedList[index])
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => FeedPage(feed: feed))),
+                      // disable removing the podcast feed while refreshing, or while downloading episodes for this feed
+                      onLongPress: (dataModel.isBusy || feed.numEpisodesDownloading > 0) ? null : () => 
+                        showRemoveFeedDialog(context, feed.title, index, _onRemoveFeed), 
+                      child: FeedPreview(feed: feed)
                     );
                   }
                 ),
@@ -283,14 +286,13 @@ class FeedPreview extends StatelessWidget
         Padding(
           padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
           child: Text(
-            "${feed.numEpisodesDownloaded} episode${feed.numEpisodesDownloaded == 1 ? '' : 's'}",
+            "${feed.numEpisodesOnDisk} episode${feed.numEpisodesOnDisk == 1 ? '' : 's'}",
             style: const TextStyle(fontWeight: FontWeight.w500)
           ),
         ),
       ],
     );
   }
-  
 }
 
 //*************************************************************************************************
@@ -391,7 +393,7 @@ List<String> urls = [
 "https://feeds.simplecast.com/JT6pbPkg",
 "https://makingembeddedsystems.libsyn.com/rss",
 "https://talkpython.fm/episodes/rss",
-"https://www.sciencefriday.com/feed/podcast/science-friday/",
+"https://feeds.simplecast.com/4T39_jAj", // StarTalk
 "https://feeds.megaphone.fm/ignbeyond",
 "https://feeds.megaphone.fm/ignunlocked",
 "https://feeds.megaphone.fm/unfiltered",

@@ -109,6 +109,15 @@ class DataModel extends ChangeNotifier
 
   Future<void> refreshAllFeeds() async
   {
+    // don't continue with the refresh if any Feeds are downloading episodes
+    for (Feed feed in _feedList)
+    {
+      if (feed.numEpisodesDownloading > 0)
+      {
+        return;
+      }
+    }
+
     _isRefreshing = true;
     notifyListeners();
 
@@ -214,7 +223,7 @@ class DataModel extends ChangeNotifier
     {
       if (episode.filename.isNotEmpty)
       {
-        feed.numEpisodesDownloaded++;
+        feed.numEpisodesOnDisk++;
       }
     }
 
@@ -298,6 +307,10 @@ class DataModel extends ChangeNotifier
   Future<Uint8List> _fetchAlbumArt(String url) async
   {
     final resp = await http.get(Uri.parse(url));
+    if (resp.statusCode ~/ 100 != 2)
+    {
+      throw Exception("Error when fetching album art at $url: ${resp.statusCode}");
+    }
     return resp.bodyBytes;
   }
 
@@ -305,23 +318,46 @@ class DataModel extends ChangeNotifier
 
   Future<void> fetchEpisode(Episode episode) async
   {
-    // use guid for filename
-    String fullLocalPath = combinePaths(episode.localDir, episode.guid);
-
-    logDebugMsg("starting download");
-    final resp = await http.get(Uri.parse(episode.url));
-    await saveToFileBytes(fullLocalPath, resp.bodyBytes);
-    logDebugMsg("done saving file to localDir");
-
-    // once it successfully downloads, update the filename in the Episode
-    episode.filename = episode.guid;
-    
-    // update the number of episodes downloaded for the feed
+    // find the Feed associated with this episode
     Feed feed = _feedList.firstWhere((element) => element.localDir == episode.localDir);
-    feed.numEpisodesDownloaded++;
-
-    logDebugMsg("Episode and Feed updated, notifying listeners");
-
+    // this will prevent user from refreshing while downloading, that would cause too many side effects
+    feed.numEpisodesDownloading++;
+    episode.isDownloading = true;
     notifyListeners();
+    
+    // TODO: is there a way to http.get partial data? if failed, remove partial download?
+    // try streams, as bytes come in write them to disk, this will be faster and use less RAM, can show progress of download
+
+    try
+    {
+      // use guid for filename
+      String fullLocalPath = combinePaths(episode.localDir, episode.guid);
+
+      logDebugMsg("starting download");
+      final resp = await http.get(Uri.parse(episode.url));
+      if (resp.statusCode ~/ 100 != 2)
+      {
+        throw Exception("Error when fetching episode ${episode.title}: ${resp.statusCode}");
+      }
+      await saveToFileBytes(fullLocalPath, resp.bodyBytes);
+      logDebugMsg("done saving file to localDir");
+
+      // once it successfully downloads, update the filename in the Episode
+      episode.filename = episode.guid;
+    }
+    catch (err)
+    {
+      rethrow; // even with this rethrow the finally clause still runs
+    }
+    finally
+    {
+      episode.isDownloading = false;
+      // update the number of episodes downloaded for the feed
+      feed.numEpisodesOnDisk++;
+      feed.numEpisodesDownloading--;
+
+      logDebugMsg("Episode and Feed updated, notifying listeners");
+      notifyListeners();
+    }
   }
 }
