@@ -22,11 +22,13 @@ class DataModel extends ChangeNotifier
 
   bool _isInitializing = true;
   bool get isInitializing => _isInitializing;
-
   bool _isRefreshing = false;
   bool get isRefreshing => _isRefreshing;
-
   bool get isBusy => (_isInitializing || _isRefreshing);
+
+  // this scaffold messenger key is used to show the SnackBar (toast) outside of a build function since otherwise 
+  // we would need the BuildContext
+  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   //*********************************************
 
@@ -34,6 +36,14 @@ class DataModel extends ChangeNotifier
   DataModel()
   {
     _loadAllFeedsFromDisk();
+  }
+
+  //*********************************************
+
+  void showMessageToUser(String msg)
+  {
+    scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text(msg), duration: Duration(seconds: 10)));
+    notifyListeners();
   }
 
   //*********************************************

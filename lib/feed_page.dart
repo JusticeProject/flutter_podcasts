@@ -14,9 +14,6 @@ class FeedPage extends StatelessWidget
 
   final Feed feed;
 
-  // TODO: Refresh, drag down on FeedPage?
-  // can query the DataModel for the updated Feed, pass an id/index/feed url to the DataModel so it knows which one?
-
   @override
   Widget build(BuildContext context)
   {
@@ -183,9 +180,7 @@ class DownloadButton extends StatelessWidget
     }
     catch (err)
     {
-      // TODO: show SnackBar on error
-      // can I store the scaffoldMessengerKey in DataModel so anyone can grab it?
-      // or can I call a method on dataModel that will then notify some subscriber, that subscriber will display the SnackBar?
+      dataModel.showMessageToUser(err.toString());
     }
   }
 

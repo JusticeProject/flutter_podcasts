@@ -14,7 +14,12 @@ void main()
   //debugPaintSizeEnabled = true; // Enables layout lines
   disableCertError();
 
-  runApp(PodcastApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => DataModel(),
+      child: PodcastApp()
+    )
+  );
 }
 
 //*************************************************************************************************
@@ -23,21 +28,17 @@ void main()
 
 class PodcastApp extends StatelessWidget
 {
-  PodcastApp({super.key});
-  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
-
+  const PodcastApp({super.key});
+  
   @override
   Widget build(BuildContext context)
   {
-    return ChangeNotifierProvider(
-      create: (context) => DataModel(),
-      child: MaterialApp(
-        title: 'Simple Podcasts App',
-        scaffoldMessengerKey: _scaffoldMessengerKey,
-        theme: ThemeData(colorScheme: ColorScheme.dark()),
-        home: LibraryPage(scaffoldMessengerKey: _scaffoldMessengerKey),
-        debugShowCheckedModeBanner: false,
-      ),
+    return MaterialApp(
+      title: 'Simple Podcasts App',
+      scaffoldMessengerKey: Provider.of<DataModel>(context, listen: false).scaffoldMessengerKey,
+      theme: ThemeData(colorScheme: ColorScheme.dark()),
+      home: LibraryPage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -48,13 +49,9 @@ class PodcastApp extends StatelessWidget
 
 class LibraryPage extends StatefulWidget
 {
-  const LibraryPage({super.key, required this.scaffoldMessengerKey});
+  const LibraryPage({super.key});
 
   final String title = "Library";
-
-  // this scaffold messenger key is used to show the SnackBar (toast) outside of a build function since otherwise 
-  // we would need the BuildContext
-  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
 
   @override
   State<LibraryPage> createState() => _LibraryPageState();
@@ -89,14 +86,6 @@ class _LibraryPageState extends State<LibraryPage>
     _scrollController.dispose();
     _feedList = [];
     super.dispose();
-  }
-
-  //*******************************************************
-
-  void _showMessageToUser(String msg)
-  {
-    // widget in this case refers to the corresponding StatefulWidget
-    widget.scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text(msg), duration: Duration(seconds: 10)));
   }
 
   //*******************************************************
@@ -143,7 +132,7 @@ class _LibraryPageState extends State<LibraryPage>
 
     void futureError(err)
     {
-      _showMessageToUser(err.toString());
+      dataModel.showMessageToUser(err.toString());
     }
 
     dataModel.addFeed(url).then(futureDone).catchError(futureError);
@@ -162,7 +151,7 @@ class _LibraryPageState extends State<LibraryPage>
   {
     void futureError(err)
     {
-      _showMessageToUser(err.toString());
+      dataModel.showMessageToUser(err.toString());
     }
 
     Future<void> future = dataModel.refreshAllFeeds().catchError(futureError);
