@@ -345,7 +345,7 @@ class DataModel extends ChangeNotifier
   Future<void> fetchEpisode(Episode episode) async
   {
     // find the Feed associated with this episode
-    Feed feed = _feedList.firstWhere((element) => element.localDir == episode.localDir);
+    Feed feed = _getFeedOfEpisode(episode);
     // this will prevent user from refreshing while downloading, that would cause too many side effects
     feed.numEpisodesDownloading++;
     episode.isDownloading = true;
@@ -398,7 +398,7 @@ class DataModel extends ChangeNotifier
       {
         await File(fullLocalPath).delete();
         episode.filename = "";
-        Feed feed = _feedList.firstWhere((element) => element.localDir == episode.localDir);
+        Feed feed = _getFeedOfEpisode(episode);
         feed.numEpisodesOnDisk--;
         notifyListeners();
       }
@@ -441,8 +441,11 @@ class DataModel extends ChangeNotifier
         episode.playbackPosition = d;
       });
     
+    // TODO: set the callback for when playback is done, set episode.isPlaying = false, set episode.played = true, notifyListeners
+    
     logDebugMsg("now playing");
     episode.isPlaying = true;
+    _getFeedOfEpisode(episode).isPlaying = true;
     notifyListeners();
   }
 
@@ -451,9 +454,20 @@ class DataModel extends ChangeNotifier
   Future<void> pauseEpisode(Episode episode) async
   {
     episode.isPlaying = false;
+    _getFeedOfEpisode(episode).isPlaying = false;
     await _playbackPositionSubscription?.cancel();
     await _audioPlayer.pause();
     logDebugMsg("now paused");
     notifyListeners();
+  }
+
+  //*********************************************
+  //*********************************************
+  //*********************************************
+
+  Feed _getFeedOfEpisode(Episode episode)
+  {
+    Feed feed = _feedList.firstWhere((element) => element.localDir == episode.localDir);
+    return feed;
   }
 }

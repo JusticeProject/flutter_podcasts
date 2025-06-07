@@ -4,6 +4,7 @@ import 'feed_page.dart';
 import 'data_structures.dart';
 import 'utilities.dart';
 import 'data_model.dart';
+import 'spectrum_bars.dart';
 
 //*************************************************************************************************
 //*************************************************************************************************
@@ -40,6 +41,7 @@ class PodcastApp extends StatelessWidget
       // https://pub.dev/packages/google_fonts
       // or try a different one with this method:
       // const Text('Roboto (Default)', style: TextStyle(fontFamily: 'Roboto', fontSize: 16))
+      // check to see what font 0 Episodes uses
       theme: ThemeData(colorScheme: ColorScheme.dark(), textTheme: TextTheme()),
       home: LibraryPage(),
       debugShowCheckedModeBanner: false,
@@ -101,26 +103,15 @@ class _LibraryPageState extends State<LibraryPage>
   {
     //logDebugMsg("${_scrollController.offset} / ${_scrollController.position.maxScrollExtent}");
 
-    // TODO: what about when no podcasts are in the library?
-    if (_scrollController.offset > (_scrollController.position.maxScrollExtent - 100))
+    // if we are far away from the bottom (max scroll extent) then we can show the fully extended "Add podcast" button
+    bool shouldBeExtended = (_scrollController.offset < (_scrollController.position.maxScrollExtent - 100));
+
+    // only update when we cross the threshold
+    if (_showExtendedButton != shouldBeExtended)
     {
-      // we are at the bottom, only update if we are currently showing the extended button
-      if (_showExtendedButton)
-      {
-        setState(() {
-          _showExtendedButton = false;
-        });
-      }
-    }
-    else
-    {
-      // we are away from the bottom, only update if we are currently showing the narrow button
-      if (!_showExtendedButton)
-      {
-        setState(() {
-          _showExtendedButton = true;
-        });  
-      }
+      setState(() {
+        _showExtendedButton = shouldBeExtended;
+      });
     }
   }
 
@@ -284,12 +275,11 @@ class _LibraryPageState extends State<LibraryPage>
           )
         )
       ),
-      // dynamically switch from extended to regular FloatingActionButton
       floatingActionButton: Consumer<DataModel>(
         builder: (context, dataModel, child) {
           return FloatingActionButton.extended(
             label: Text("Add podcast"),
-            isExtended: _showExtendedButton,
+            isExtended: _showExtendedButton, // dynamically switch from extended to regular FloatingActionButton based on scroll position
             // we disable the Add Podcast button when the library of feeds is loading or already adding a new one
             onPressed: dataModel.isBusy ? null : () => showAddFeedDialog(context, _onNewFeed),
             icon: const Icon(Icons.add),
@@ -314,7 +304,7 @@ class FeedPreview extends StatelessWidget
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        feed.albumArt,
+        feed.isPlaying ? Stack(children: [feed.albumArt, SizedBox(width: 40, height: 25, child: SpectrumBars())]) : feed.albumArt,
         Padding(
           padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
           child: Row(

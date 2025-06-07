@@ -5,6 +5,7 @@ import 'data_model.dart';
 import 'utilities.dart';
 import 'data_structures.dart';
 import 'episode_page.dart';
+import 'spectrum_bars.dart';
 
 //*************************************************************************************************
 
@@ -136,6 +137,9 @@ class EpisodePreview extends StatelessWidget
                 Icon(Icons.circle, size: 5),
                 SizedBox(width: 8),
                 const Text("unplayed"), // TODO: played vs 40 min vs 38 min left + progress bar
+                SizedBox(width: 8),
+                if (episode.isPlaying)
+                  FittedBox(child: SizedBox(width: 30, height: 20, child: SpectrumBars())),
                 Spacer(),
                 DownloadButton(episode: episode),
                 PlayButton(episode: episode)

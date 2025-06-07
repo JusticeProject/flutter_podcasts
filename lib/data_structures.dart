@@ -20,32 +20,9 @@ class Feed
   bool newEpisodesOnLastRefresh = false;
   int numEpisodesOnDisk = 0;
   int numEpisodesDownloading = 0;
+  bool isPlaying = false;
 
   final List<Episode> episodes;
-}
-
-//*************************************************************************************************
-
-class FeedConfig
-{
-  FeedConfig(this.url, this.datePublishedUTC);
-  
-  final String url;
-  DateTime datePublishedUTC; // date inside the last XML that was downloaded and saved
-
-  @override
-  String toString() {
-    final String dateStringUTC = dateTimeUTCToStringUTC(datePublishedUTC);
-    return "$url\n$dateStringUTC";
-  }
-
-  factory FeedConfig.fromExisting(String data)
-  {
-    List<String> dataSplit = data.split("\n");
-    DateTime date = stringToDateTimeUTC(dataSplit[1]);
-    FeedConfig config = FeedConfig(dataSplit[0], date);
-    return config;
-  }
 }
 
 //*************************************************************************************************
@@ -78,4 +55,28 @@ class Episode
   final String description;
   final String descriptionNoHtml;
   final DateTime datePublishedUTC;
+}
+
+//*************************************************************************************************
+
+class FeedConfig
+{
+  FeedConfig(this.url, this.datePublishedUTC);
+  
+  final String url;
+  DateTime datePublishedUTC; // date inside the last XML that was downloaded and saved
+
+  @override
+  String toString() {
+    final String dateStringUTC = dateTimeUTCToStringUTC(datePublishedUTC);
+    return "$url\n$dateStringUTC";
+  }
+
+  factory FeedConfig.fromExisting(String data)
+  {
+    List<String> dataSplit = data.split("\n");
+    DateTime date = stringToDateTimeUTC(dataSplit[1]);
+    FeedConfig config = FeedConfig(dataSplit[0], date);
+    return config;
+  }
 }
