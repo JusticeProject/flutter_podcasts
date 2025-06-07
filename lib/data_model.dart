@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 import 'data_structures.dart';
 import 'utilities.dart';
@@ -29,6 +31,9 @@ class DataModel extends ChangeNotifier
   // this scaffold messenger key is used to show the SnackBar (toast) outside of a build function since otherwise 
   // we would need the BuildContext
   final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  StreamSubscription<Duration>? _playbackPositionSubscription;
 
   //*********************************************
 
@@ -264,6 +269,8 @@ class DataModel extends ChangeNotifier
 
     // TODO: should I move the below to loadFeedFromDisk?
 
+    // TODO: what if an episode is playing right now? maybe skip that feed? what if the episode is playing while the user refreshes?
+
     await for (var item in itemStream)
     {
       if (item is Directory)
@@ -396,5 +403,57 @@ class DataModel extends ChangeNotifier
         notifyListeners();
       }
     }
+  }
+
+  //*********************************************
+  //*********************************************
+  //*********************************************
+
+  Future<void> playEpisode(Episode episode) async
+  {
+    if (_audioPlayer.state == PlayerState.playing)
+    {
+      // a different file is probably playing, pause it and keep that position, also mark it as not playing
+      for (Feed feed in _feedList)
+      {
+        for (Episode episode in feed.episodes)
+        {
+          if (episode.isPlaying)
+          {
+            await pauseEpisode(episode);
+          }
+        }
+      }
+    }
+
+    // AudioPlayer API usage:
+    // https://pub.dev/packages/audioplayers
+    // https://github.com/bluefireteam/audioplayers/blob/main/getting_started.md
+
+    String fullLocalPath = combinePaths(episode.localDir, episode.filename);
+    await _audioPlayer.setSourceDeviceFile(fullLocalPath);
+    await _audioPlayer.seek(episode.playbackPosition);
+    logDebugMsg("done seeking to ${episode.playbackPosition}");
+    await _audioPlayer.resume();
+    _playbackPositionSubscription = _audioPlayer.onPositionChanged.listen((Duration d)
+      {
+        // TODO: notifyListeners when there is a progress bar
+        episode.playbackPosition = d;
+      });
+    
+    logDebugMsg("now playing");
+    episode.isPlaying = true;
+    notifyListeners();
+  }
+
+  //*********************************************
+
+  Future<void> pauseEpisode(Episode episode) async
+  {
+    episode.isPlaying = false;
+    await _playbackPositionSubscription?.cancel();
+    await _audioPlayer.pause();
+    logDebugMsg("now paused");
+    notifyListeners();
   }
 }

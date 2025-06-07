@@ -103,14 +103,6 @@ class EpisodePreview extends StatelessWidget
 
   //*******************************************************
 
-  void _onPlayEpisode()
-  {
-    // TODO: implement playing / pausing episode
-    logDebugMsg("playing ${episode.title}");
-  }
-
-  //*******************************************************
-
   @override
   Widget build(BuildContext context)
   {
@@ -146,11 +138,7 @@ class EpisodePreview extends StatelessWidget
                 const Text("unplayed"), // TODO: played vs 40 min vs 38 min left + progress bar
                 Spacer(),
                 DownloadButton(episode: episode),
-                IconButton(
-                  onPressed: episode.filename.isEmpty ? () {} : _onPlayEpisode, 
-                  icon: Icon(episode.filename.isEmpty ? Icons.play_arrow_outlined : Icons.play_arrow,
-                    color: episode.filename.isEmpty ? Theme.of(context).disabledColor : null,
-                  ))
+                PlayButton(episode: episode)
               ]
             )
           ],
@@ -243,6 +231,77 @@ class DownloadButton extends StatelessWidget
           });
         },
         
+      );
+    }
+  }
+}
+
+//*************************************************************************************************
+
+class PlayButton extends StatelessWidget
+{
+  const PlayButton({super.key, required this.episode});
+
+  final Episode episode;
+
+  //*******************************************************
+
+  void _onPlayEpisode(DataModel dataModel) async
+  {
+    logDebugMsg("playing ${episode.title}");
+    try
+    {
+      await dataModel.playEpisode(episode);
+    }
+    catch (err)
+    {
+      dataModel.showMessageToUser(err.toString());
+    }
+  }
+
+  //*******************************************************
+
+  void _onPauseEpisode(DataModel dataModel) async
+  {
+    try
+    {
+      await dataModel.pauseEpisode(episode);
+    }
+    catch (err)
+    {
+      dataModel.showMessageToUser(err.toString());
+    }
+  }
+
+  //*******************************************************
+
+  @override
+  Widget build(BuildContext context)
+  {
+    DataModel dataModel = context.watch<DataModel>();
+
+    if (episode.filename.isEmpty)
+    {
+      // no downloaded file and it's obviously not playing right now
+      return IconButton(
+        icon: Icon(Icons.play_arrow_outlined, color: Theme.of(context).disabledColor),
+        onPressed: () {}
+      );
+    }
+    else if (episode.isPlaying)
+    {
+      // it's playing
+      return IconButton(
+        icon: Icon(Icons.pause),
+        onPressed: () => _onPauseEpisode(dataModel),
+      );
+    }
+    else
+    {
+      // we have the file downloaded but it's not playing right now
+      return IconButton(
+        icon: Icon(Icons.play_arrow),
+        onPressed: () => _onPlayEpisode(dataModel)
       );
     }
   }

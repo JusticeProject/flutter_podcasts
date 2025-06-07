@@ -68,6 +68,12 @@ class Episode
   final String url;
   bool isDownloading = false;
 
+  bool isPlaying = false;
+  // TODO: what if file is playing while user refreshes?
+  // TODO: need to save the positions for each file to disk if the duration is > 0, when loading check to see if the positions file has
+  // the guid/filename, save to disk in DataModel's destructor?
+  Duration playbackPosition = Duration();
+
   final String title;
   final String description;
   final String descriptionNoHtml;
