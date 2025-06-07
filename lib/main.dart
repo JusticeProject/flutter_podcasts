@@ -36,7 +36,11 @@ class PodcastApp extends StatelessWidget
     return MaterialApp(
       title: 'Simple Podcasts App',
       scaffoldMessengerKey: Provider.of<DataModel>(context, listen: false).scaffoldMessengerKey,
-      theme: ThemeData(colorScheme: ColorScheme.dark()),
+      // TODO: try a different font, maybe textTheme: GoogleFonts.latoTextTheme() from google_fonts 
+      // https://pub.dev/packages/google_fonts
+      // or try a different one with this method:
+      // const Text('Roboto (Default)', style: TextStyle(fontFamily: 'Roboto', fontSize: 16))
+      theme: ThemeData(colorScheme: ColorScheme.dark(), textTheme: TextTheme()),
       home: LibraryPage(),
       debugShowCheckedModeBanner: false,
     );
@@ -64,6 +68,7 @@ class LibraryPage extends StatefulWidget
 class _LibraryPageState extends State<LibraryPage>
 {
   late final ScrollController _scrollController;
+  bool _showExtendedButton = true;
   late List<Feed> _feedList;
   late int _tapCount;
   late DateTime _lastTapTime;
@@ -73,6 +78,7 @@ class _LibraryPageState extends State<LibraryPage>
   @override
   void initState() {
     _scrollController = ScrollController();
+    _scrollController.addListener(_onScrollPositionChanged);
     _feedList = [];
     _tapCount = 0;
     _lastTapTime = DateTime.now();
@@ -83,9 +89,39 @@ class _LibraryPageState extends State<LibraryPage>
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScrollPositionChanged);
     _scrollController.dispose();
     _feedList = [];
     super.dispose();
+  }
+
+  //*******************************************************
+
+  void _onScrollPositionChanged()
+  {
+    //logDebugMsg("${_scrollController.offset} / ${_scrollController.position.maxScrollExtent}");
+
+    // TODO: what about when no podcasts are in the library?
+    if (_scrollController.offset > (_scrollController.position.maxScrollExtent - 100))
+    {
+      // we are at the bottom, only update if we are currently showing the extended button
+      if (_showExtendedButton)
+      {
+        setState(() {
+          _showExtendedButton = false;
+        });
+      }
+    }
+    else
+    {
+      // we are away from the bottom, only update if we are currently showing the narrow button
+      if (!_showExtendedButton)
+      {
+        setState(() {
+          _showExtendedButton = true;
+        });  
+      }
+    }
   }
 
   //*******************************************************
@@ -248,11 +284,12 @@ class _LibraryPageState extends State<LibraryPage>
           )
         )
       ),
-      // TODO: can I dynamically switch from extended to regular FloatingAction button? the extended covers up the bottom podcast text
+      // dynamically switch from extended to regular FloatingActionButton
       floatingActionButton: Consumer<DataModel>(
         builder: (context, dataModel, child) {
           return FloatingActionButton.extended(
             label: Text("Add podcast"),
+            isExtended: _showExtendedButton,
             // we disable the Add Podcast button when the library of feeds is loading or already adding a new one
             onPressed: dataModel.isBusy ? null : () => showAddFeedDialog(context, _onNewFeed),
             icon: const Icon(Icons.add),
@@ -317,7 +354,7 @@ void showAddFeedDialog(BuildContext context, void Function(DataModel dataModel, 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Text("Enter the URL of the RSS feed:"),
+            const Text("To add a podcast, enter the URL of the RSS feed:"),
             TextField(autofocus: true,
               onChanged: (value) {
                 url = value;
@@ -404,4 +441,21 @@ List<String> urls = [
 "https://feeds.megaphone.fm/nvc",
 "https://feeds.megaphone.fm/kindafunnypodcast",
 "https://feeds.npr.org/510289/podcast.xml",
+// The Indicator (NPR)
+// Kinda Funny Games Daily
+// Rust In Production
+// Google AI Release Notes
+// Rustacean Station
+// Fallthrough (Go)
+// Next-Gen Console Watch
+// Python Bytes
+// FLOSS Weekly
+// Abroad in Japan
+// PowerUp / EETimes
+// Embedded Edge
+// This American Life
+// Lex Friedman
+// Foundation for Middle East Peace (FMEP)
+// Above and Beyond, Armin, Tiesto, Gareth Emery, Paul van Dyk
+// Sacred Symbols (Playstation)
 ];
