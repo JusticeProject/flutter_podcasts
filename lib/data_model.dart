@@ -391,6 +391,12 @@ class DataModel extends ChangeNotifier
 
   Future<void> removeEpisode(Episode episode) async
   {
+    // if episode is playing, pause it first
+    if (episode.isPlaying)
+    {
+      await pauseEpisode(episode);
+    }
+
     if (episode.filename.isNotEmpty)
     {
       String fullLocalPath = combinePaths(episode.localDir, episode.filename);

@@ -37,12 +37,12 @@ class PodcastApp extends StatelessWidget
     return MaterialApp(
       title: 'Simple Podcasts App',
       scaffoldMessengerKey: Provider.of<DataModel>(context, listen: false).scaffoldMessengerKey,
-      // TODO: try a different font, maybe textTheme: GoogleFonts.latoTextTheme() from google_fonts 
+      // could try a different font, maybe textTheme: GoogleFonts.latoTextTheme() from google_fonts package:
       // https://pub.dev/packages/google_fonts
-      // or try a different one with this method:
-      // const Text('Roboto (Default)', style: TextStyle(fontFamily: 'Roboto', fontSize: 16))
-      // check to see what font 0 Episodes uses
-      theme: ThemeData(colorScheme: ColorScheme.dark(), textTheme: TextTheme()),
+      theme: ThemeData(
+        colorScheme: ColorScheme.dark(), 
+        fontFamily: 'serif'
+      ),
       home: LibraryPage(),
       debugShowCheckedModeBanner: false,
     );
@@ -312,7 +312,7 @@ class FeedPreview extends StatelessWidget
             children: [
               Text(
                 "${feed.numEpisodesOnDisk} episode${feed.numEpisodesOnDisk == 1 ? '' : 's'}",
-                style: const TextStyle(fontWeight: FontWeight.w500)
+                style: const TextStyle(fontWeight: FontWeight.bold)
               ),
               SizedBox(width: 10),
               if (feed.newEpisodesOnLastRefresh)
