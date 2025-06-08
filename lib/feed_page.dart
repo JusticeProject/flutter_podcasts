@@ -32,7 +32,7 @@ class FeedPage extends StatelessWidget
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(margin: EdgeInsets.fromLTRB(100, 10, 100, 10), child: feed.albumArt),
-              Text(feed.title, style: Theme.of(context).textTheme.headlineMedium),
+              Text(feed.title, style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
               Text(feed.author, style: Theme.of(context).textTheme.labelMedium),
               Padding(
                 padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),

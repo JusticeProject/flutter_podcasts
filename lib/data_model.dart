@@ -19,7 +19,7 @@ class DataModel extends ChangeNotifier
   // directory, with the directory name being "0" or "5" which corresponds to its feedNumber;
   int _highestFeedNumber = -1;
   
-  List<Feed> _feedList = [];
+  final List<Feed> _feedList = []; // we can still add to the list even though it's marked as final
   List<Feed> get feedList => _feedList;
 
   bool _isInitializing = true;
@@ -27,6 +27,9 @@ class DataModel extends ChangeNotifier
   bool _isRefreshing = false;
   bool get isRefreshing => _isRefreshing;
   bool get isBusy => (_isInitializing || _isRefreshing);
+
+  bool _failedToLoad = false;
+  bool get failedToLoad => _failedToLoad;
 
   // this scaffold messenger key is used to show the SnackBar (toast) outside of a build function since otherwise 
   // we would need the BuildContext
@@ -40,7 +43,14 @@ class DataModel extends ChangeNotifier
   // Constructor
   DataModel()
   {
-    _loadAllFeedsFromDisk();
+    _loadAllFeedsFromDisk().catchError(
+      (err)
+      {
+        logDebugMsg("failed initial load of feeds");
+        _failedToLoad = true;
+        showMessageToUser(err.toString());
+      }
+    );
   }
 
   //*********************************************
@@ -144,12 +154,18 @@ class DataModel extends ChangeNotifier
     {
       try
       {
-        feedHasNewData[i] = await _refreshFeed(_feedList[i]);
+        if (_feedList[i].isPlaying)
+        {
+          logDebugMsg("skipping refresh of ${_feedList[i].title} since it's playing");
+        }
+        else
+        {
+          feedHasNewData[i] = await _refreshFeed(_feedList[i]);
+        }
       }
       catch (err)
       {
-        String msgWithoutPrefix = err.toString().replaceFirst("Exception: ", "");
-        errorMsg = "Error refreshing ${_feedList[i].title}: $msgWithoutPrefix";
+        errorMsg = "Error refreshing ${_feedList[i].title}: ${err.toString()}";
       }
     }
 
@@ -157,7 +173,16 @@ class DataModel extends ChangeNotifier
     {
       if (feedHasNewData[i])
       {
-        await _loadAllFeedsFromDisk();
+        try
+        {
+          await _loadAllFeedsFromDisk();
+        }
+        catch (err)
+        {
+          errorMsg = "Error loading after refreshing: ${err.toString()}";
+        }
+
+        // only load once
         break;
       }
     }
@@ -258,41 +283,62 @@ class DataModel extends ChangeNotifier
 
   Future<void> _loadAllFeedsFromDisk() async
   {
-    _feedList = [];
-    var path = await getLocalPath();
-    var dir = Directory(path);
-    var itemStream = dir.list();
-
-    // TODO: need a try/catch here, it may not have been caught in addPodcast because the new xml was downloaded later which is missing info
-    // But then I won't be able to display the episodes, should I keep a backup of the old xml file?
-    // try/catch is also needed so the app doesn't crash on loading
-
-    // TODO: should I move the below to loadFeedFromDisk?
-
-    // TODO: what if an episode is playing right now? maybe skip that feed? what if the episode is playing while the user refreshes?
-
-    await for (var item in itemStream)
+    // first time loading the list will be empty
+    if (_feedList.isEmpty)
     {
-      if (item is Directory)
+      var path = await getLocalPath();
+      var dir = Directory(path);
+      var itemStream = dir.list();
+
+      await for (var item in itemStream)
       {
-        Feed feed = await _gatherFeedInfo(item.path, false);
-        _feedList.add(feed);
+        if (item is Directory)
+        {
+          // Continue loading even if some feeds failed to load. Some feeds might have missing info which throws an exception.
+          // We'll show a message to the user when it happens.
+          try
+          {
+            Feed feed = await _gatherFeedInfo(item.path, false);
+            _feedList.add(feed);
+          }
+          catch (err)
+          {
+            showMessageToUser(err.toString());
+          }
+        }
+      }
+
+      _feedList.sort((a, b) => a.feedNumber.compareTo(b.feedNumber));
+
+      if (_feedList.isNotEmpty)
+      {
+        _highestFeedNumber = _feedList.last.feedNumber;
+      }
+
+      logDebugMsg("_highestFeedNumber = $_highestFeedNumber");
+
+      // for testing the circular progress indicator
+      //await Future.delayed(Duration(seconds: 5));
+      _isInitializing = false;
+      notifyListeners();
+    }
+    else
+    {
+      for (int i = 0; i < _feedList.length; i++)
+      {
+        // we should only reload a feed if it isn't playing
+        if (_feedList[i].isPlaying)
+        {
+          logDebugMsg("skipping load of feed ${_feedList[i].title} since it's playing");
+        }
+        else
+        {
+          // TODO: use the old Feed to copy information to the new Feed object, like each Episode's playbackPosition/played information
+          // A helper function could be used for that: copyPlaybackInfo, will need to see that the Episode's guid matches before each copy.
+          _feedList[i] = await _gatherFeedInfo(_feedList[i].localDir, false);
+        }
       }
     }
-
-    _feedList.sort((a, b) => a.feedNumber.compareTo(b.feedNumber));
-
-    if (_feedList.isNotEmpty)
-    {
-      _highestFeedNumber = _feedList.last.feedNumber;
-    }
-
-    logDebugMsg("_highestFeedNumber = $_highestFeedNumber");
-
-    // for testing the circular progress indicator
-    //await Future.delayed(Duration(seconds: 5));
-    _isInitializing = false;
-    notifyListeners();
   }
 
   //*********************************************
@@ -370,6 +416,9 @@ class DataModel extends ChangeNotifier
 
       // once it successfully downloads, update the filename in the Episode
       episode.filename = episode.guid;
+
+      // update the number of episodes downloaded for the feed
+      feed.numEpisodesOnDisk++;
     }
     catch (err)
     {
@@ -378,8 +427,6 @@ class DataModel extends ChangeNotifier
     finally
     {
       episode.isDownloading = false;
-      // update the number of episodes downloaded for the feed
-      feed.numEpisodesOnDisk++;
       feed.numEpisodesDownloading--;
 
       logDebugMsg("Episode and Feed updated, notifying listeners");

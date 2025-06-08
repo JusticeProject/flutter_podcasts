@@ -233,6 +233,11 @@ class _LibraryPageState extends State<LibraryPage>
           child: Consumer<DataModel>(
             builder: (context, dataModel, child)
             {
+              if (dataModel.failedToLoad)
+              {
+                return Icon(Icons.warning, size: 50, color: Colors.amber);
+              }
+
               if (dataModel.isInitializing)
               {
                 return const CircularProgressIndicator();
@@ -419,8 +424,8 @@ List<String> urls = [
 "https://feeds.twit.tv/uls.xml",
 "https://feeds.twit.tv/twig.xml",
 "https://feeds.megaphone.fm/gamescoop",
-"https://feeds.simplecast.com/6WD3bDj7",
-"https://feeds.simplecast.com/JT6pbPkg",
+"https://feeds.simplecast.com/6WD3bDj7", // Triple Click
+"https://feeds.simplecast.com/JT6pbPkg", // Google DeepMind
 "https://makingembeddedsystems.libsyn.com/rss",
 "https://talkpython.fm/episodes/rss",
 "https://feeds.simplecast.com/4T39_jAj", // StarTalk
@@ -431,6 +436,7 @@ List<String> urls = [
 "https://feeds.megaphone.fm/nvc",
 "https://feeds.megaphone.fm/kindafunnypodcast",
 "https://feeds.npr.org/510289/podcast.xml",
+"https://feeds.simplecast.com/h18ZIZD_", // Science Friday
 // The Indicator (NPR)
 // Kinda Funny Games Daily
 // Rust In Production

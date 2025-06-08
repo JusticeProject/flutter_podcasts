@@ -120,7 +120,8 @@ DateTime stringToDateTimeUTC(String input)
   catch (err)
   {
     logDebugMsg(err.toString());
-    rethrow;
+    // default date will be 1970
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 }
 

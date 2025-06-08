@@ -47,7 +47,7 @@ class _SpectrumBarsState extends State<SpectrumBars>
 
   void _onTimerTick(Timer timer)
   {
-    double newProgress = _progress + 0.08;
+    double newProgress = _progress + 0.075;
     if (newProgress > 2 * math.pi)
     {
       newProgress -= 2 * math.pi;
@@ -94,16 +94,22 @@ class SpectrumBarsPainter extends CustomPainter
     final backgroundPaint = Paint()..color = backgroundColor;
     final foregroundPaint = Paint()..color = foregroundColor;
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), backgroundPaint);
-    double bassHeight = size.height * math.sin(progress).abs();
+
+    final double fixedPortionOfHeight = 5;
+    final double variablePortionOfHeight = size.height - fixedPortionOfHeight;
+
+    double bassY = size.height - fixedPortionOfHeight - variablePortionOfHeight * math.sin(progress).abs();
     //bassHeight = math.min(0.7 * size.height, bassHeight);
-    double midHeight = size.height * math.sin(progress + math.pi/3).abs();
+    double midY = size.height - fixedPortionOfHeight - variablePortionOfHeight * math.sin(progress + math.pi/3).abs();
     //midHeight = math.min(0.7 * size.height, midHeight);
-    double trebleHeight = size.height * math.sin(progress - math.pi/3).abs();
+    double trebleY = size.height - fixedPortionOfHeight - variablePortionOfHeight * math.sin(progress - math.pi/3).abs();
     //trebleHeight = math.min(0.7 * size.height, trebleHeight);
     double barWidth = size.width / 3;
-    canvas.drawRect(Rect.fromPoints(Offset(0, size.height), Offset(barWidth, bassHeight)), foregroundPaint);
-    canvas.drawRect(Rect.fromPoints(Offset(barWidth, size.height), Offset(2 * barWidth, midHeight)), foregroundPaint);
-    canvas.drawRect(Rect.fromPoints(Offset(2 * barWidth, size.height), Offset(size.width, trebleHeight)), foregroundPaint);
+
+    // I feel like it should start at (0, size.height-1) but it doesn't look right
+    canvas.drawRect(Rect.fromPoints(Offset(0, size.height), Offset(barWidth, bassY)), foregroundPaint);
+    canvas.drawRect(Rect.fromPoints(Offset(barWidth, size.height), Offset(2 * barWidth, midY)), foregroundPaint);
+    canvas.drawRect(Rect.fromPoints(Offset(2 * barWidth, size.height), Offset(size.width, trebleY)), foregroundPaint);
   }
 
   //*******************************************************
