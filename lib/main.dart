@@ -195,7 +195,6 @@ class _LibraryPageState extends State<LibraryPage>
     {
       setState(() {
         // When tapping the FeedPreview we need to clear the newEpisode status.
-        // TODO: should I call DataModel.markFeedAsRead() which in turn calls notifyListeners?
         feed.newEpisodesOnLastRefresh = false;
       });
     }
@@ -420,38 +419,39 @@ void showRemoveFeedDialog(BuildContext context, String title, int index, void Fu
 
 // my default RSS feeds
 List<String> urls = [
-"https://feeds.twit.tv/sn.xml",
-"https://feeds.twit.tv/uls.xml",
-"https://feeds.twit.tv/twig.xml",
-"https://feeds.megaphone.fm/gamescoop",
+"https://feeds.twit.tv/sn.xml", // Security Now
+"https://feeds.twit.tv/twig.xml", // This Week in Google -> Intelligent Machines
+"https://feeds.twit.tv/uls.xml", // The Untitled Linux Show
+// FLOSS Weekly
 "https://feeds.simplecast.com/6WD3bDj7", // Triple Click
 "https://feeds.simplecast.com/JT6pbPkg", // Google DeepMind
-"https://makingembeddedsystems.libsyn.com/rss",
-"https://talkpython.fm/episodes/rss",
-"https://feeds.simplecast.com/4T39_jAj", // StarTalk
-"https://pinecast.com/feed/the-minnmax-show",
-"https://feeds.megaphone.fm/ignbeyond",
-"https://feeds.megaphone.fm/ignunlocked",
-"https://feeds.megaphone.fm/unfiltered",
-"https://feeds.megaphone.fm/nvc",
-"https://feeds.megaphone.fm/kindafunnypodcast",
-"https://feeds.npr.org/510289/podcast.xml",
-"https://feeds.simplecast.com/h18ZIZD_", // Science Friday
-// The Indicator (NPR)
-// Kinda Funny Games Daily
-// Rust In Production
 // Google AI Release Notes
+"https://makingembeddedsystems.libsyn.com/rss", // Embedded.fm
+"https://talkpython.fm/episodes/rss", // Talk Python to Me
+// Python Bytes
+"https://feeds.simplecast.com/4T39_jAj", // StarTalk
+"https://pinecast.com/feed/the-minnmax-show", // The MinnMax Show
+"https://feeds.megaphone.fm/gamescoop", // Game Scoop!
+"https://feeds.megaphone.fm/ignbeyond", // Beyond!
+"https://feeds.megaphone.fm/ignunlocked", // Podcast Unlocked (Xbox)
+"https://feeds.megaphone.fm/unfiltered", // IGN Unfiltered
+"https://feeds.megaphone.fm/nvc", // Nintendo Voice Chat
+"https://feeds.megaphone.fm/ignconsolewatch", // Next-Gen Console Watch
+"https://feeds.npr.org/510289/podcast.xml", // Planet Money
+"https://feeds.npr.org/510325/podcast.xml", // The Indicator (NPR)
+"https://feeds.simplecast.com/h18ZIZD_", // Science Friday
+// Stuff You Should Know
+// This American Life
+"https://feeds.megaphone.fm/kindafunnypodcast", // Kinda Funny Podcast
+"https://feeds.megaphone.fm/ROOSTER8838278962", // Kinda Funny Games Daily
+// Sacred Symbols (Playstation)
+// 8-4 Play
+// Rust In Production
 // Rustacean Station
 // Fallthrough (Go)
-// Next-Gen Console Watch
-// Python Bytes
-// FLOSS Weekly
 // Abroad in Japan
 // PowerUp / EETimes
-// Embedded Edge
-// This American Life
 // Lex Friedman
 // Foundation for Middle East Peace (FMEP)
 // Above and Beyond, Armin, Tiesto, Gareth Emery, Paul van Dyk
-// Sacred Symbols (Playstation)
 ];

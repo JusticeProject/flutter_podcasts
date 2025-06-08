@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_podcasts/feed_page.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+
 import 'utilities.dart';
 import 'data_structures.dart';
+import 'data_model.dart';
 
 //*************************************************************************************************
 
@@ -16,7 +20,8 @@ class EpisodePage extends StatelessWidget
 
   // TODO: Audio player:
 
-  // audio player at bottom of each page
+  // audio player progress bar, can seek
+  // audio player at bottom of each page and on episode page
   // Persistent bottom sheets can be created and displayed with the [showBottomSheet] function or the [ScaffoldState.showBottomSheet] method.
   // Ask gemini to create an app that plays .mp3 files with buttons for play, pause, skip ahead 30 seconds, go back 10 seconds
 
@@ -76,12 +81,137 @@ class EpisodePage extends StatelessWidget
               children: [
                 Text(episode.title, style: Theme.of(context).textTheme.headlineLarge, textAlign: TextAlign.center),
                 SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(width: 100, height: 100, child: DownloadButton(episode: episode, largeIcon: true)),
+                    SizedBox(width: 100, height: 100, child: PlayButton(episode: episode, largeIcon: true))
+                  ],
+                ),
+                SizedBox(height: 10),
+                AudioProgressBar(episode: episode),
+                SizedBox(height: 10),
+                // TODO: need skip ahead 30 seconds, rewind 10 seconds
                 Html(data: episode.description, onLinkTap: (url, attributes, element) => _onLinkTapped(url))
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+//*************************************************************************************************
+
+class AudioProgressBar extends StatefulWidget
+{
+  const AudioProgressBar({super.key, required this.episode});
+
+  final Episode episode;
+
+  @override
+  State<AudioProgressBar> createState() => _AudioProgressBarState();
+}
+
+//*************************************************************************************************
+
+class _AudioProgressBarState extends State<AudioProgressBar>
+{
+  late double _sliderPosition;
+  late bool _scrubbing;
+
+  //*******************************************************
+
+  @override
+  void initState()
+  {
+    _sliderPosition = 0.0;
+    _scrubbing = false;
+    super.initState();
+  }
+
+  //*******************************************************
+
+  void _onChanged(double userFingerPosition)
+  {
+    //logDebugMsg("onChanged: $userFingerPosition");
+    setState(() {
+      _sliderPosition = userFingerPosition;
+    });
+  }
+
+  //*******************************************************
+
+  void _onChangeStart(double userFingerPosition)
+  {
+    //logDebugMsg("onChangeStart");
+    _scrubbing = true;
+  }
+
+  //*******************************************************
+
+  void _onChangeEnd(double userFingerPosition, DataModel dataModel) async
+  {
+    //logDebugMsg("onChangeEnd");
+    _scrubbing = false;
+
+    Duration newPosition = sliderValueToDuration(userFingerPosition, widget.episode.playLength);
+    try
+    {
+      await dataModel.seekEpisode(widget.episode, newPosition);
+    }
+    catch (err)
+    {
+      dataModel.showMessageToUser(err.toString());
+    }
+  }
+
+  //*******************************************************
+
+  double durationToSliderValue(Duration playbackPosition, Duration? playLength)
+  {
+    if (playLength == null)
+    {
+      return 0.0;
+    }
+
+    double calculatedSliderValue = playbackPosition.inSeconds.toDouble() / playLength.inSeconds.toDouble();
+    return calculatedSliderValue > 1.0 ? 1.0 : calculatedSliderValue;
+  }
+
+  //*******************************************************
+
+  Duration sliderValueToDuration(double sliderValue, Duration? playLength)
+  {
+    if (playLength == null)
+    {
+      return Duration(); 
+    }
+
+    double seconds = sliderValue * playLength.inSeconds;
+    return Duration(seconds: seconds.toInt());
+  }
+
+  //*******************************************************
+
+  @override
+  Widget build(BuildContext context)
+  {
+    DataModel dataModel = context.watch<DataModel>();
+
+    return Slider(
+      min: 0.0, 
+      max: 1.0, 
+      // If the user is current scrubbing (moving it with their finger) then we use the person's finger to set the current position.
+      // If the user is not scrubbing we use the audio player's current position.
+      value: _scrubbing ? _sliderPosition : durationToSliderValue(widget.episode.playbackPosition, widget.episode.playLength), 
+      // If the episode is playing we enable the slider by providing callbacks. If the episode is not playing we disable the slider
+      // by passing in null for all the callbacks.
+      onChanged: widget.episode.isPlaying ? _onChanged : null, 
+      onChangeStart: widget.episode.isPlaying ? _onChangeStart : null, 
+      onChangeEnd: widget.episode.isPlaying ? (newValue) => _onChangeEnd(newValue, dataModel) : null
     );
   }
 }

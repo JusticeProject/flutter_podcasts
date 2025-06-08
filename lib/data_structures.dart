@@ -47,10 +47,11 @@ class Episode
   double downloadProgress = 0.0; // ranges from 0.0 to 1.0
 
   bool isPlaying = false;
-  // TODO: what if file is playing while user refreshes?
+  bool played = false;
   // TODO: need to save the positions/played for each file to disk if the duration is > 0, when loading check to see if the positions file has
   // the guid/filename, save to disk in DataModel's destructor?
   Duration playbackPosition = Duration();
+  Duration? playLength;
 
   final String title;
   final String description;

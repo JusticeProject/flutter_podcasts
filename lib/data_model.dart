@@ -37,6 +37,7 @@ class DataModel extends ChangeNotifier
 
   final AudioPlayer _audioPlayer = AudioPlayer();
   StreamSubscription<Duration>? _playbackPositionSubscription;
+  StreamSubscription<void>? _playbackCompleteSubscription;
 
   //*********************************************
 
@@ -209,8 +210,6 @@ class DataModel extends ChangeNotifier
     // TODO: what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode? should I delete the 11th episode?
     // use MAX_NUM_EPISODES
     // also, what if they change an episode's guid thus it won't match the local filename?
-
-    // TODO: if number of episodes is different between local and remote XML then save xml to disk? (they didn't update the pubDate)
 
     FeedConfig config = await loadFeedConfig(feed.localDir);
     Uint8List rssBytes = await _fetchRSS(config.url);
@@ -481,7 +480,6 @@ class DataModel extends ChangeNotifier
       await sink.flush();
       await sink.close();
       await File(localFilename).delete();
-      // TODO: how do I test partial download?
       rethrow; // even with rethrow the finally clause still runs
     }
     finally
@@ -495,7 +493,6 @@ class DataModel extends ChangeNotifier
   Future<void> removeEpisode(Episode episode) async
   {
     // if episode is playing, pause it first
-    // TODO: maybe I should stop the episode instead of pause
     if (episode.isPlaying)
     {
       await pauseEpisode(episode);
@@ -543,19 +540,35 @@ class DataModel extends ChangeNotifier
     String fullLocalPath = combinePaths(episode.localDir, episode.filename);
     await _audioPlayer.setSourceDeviceFile(fullLocalPath);
     await _audioPlayer.seek(episode.playbackPosition);
-    logDebugMsg("done seeking to ${episode.playbackPosition}");
+    logDebugMsg("done seeking to ${episode.playbackPosition}, player reports position ${await _audioPlayer.getCurrentPosition()}");
+    await _audioPlayer.setReleaseMode(ReleaseMode.stop); // without this I couldn't seek+resume to position 0 after finishing an episode
     await _audioPlayer.resume();
+    episode.playLength = await _audioPlayer.getDuration();
     _playbackPositionSubscription = _audioPlayer.onPositionChanged.listen((Duration d)
       {
-        // TODO: notifyListeners when there is a progress bar
+        /*if (d.inSeconds == 0)
+        {
+          logDebugMsg("onPositionChanged to 0");
+        }*/
+        // notifyListeners so they can update their progress bar
         episode.playbackPosition = d;
+        notifyListeners();
       });
-    
-    // TODO: set the callback for when playback is done, set episode.isPlaying = false, set episode.played = true, notifyListeners
+
+    _playbackCompleteSubscription = _audioPlayer.onPlayerComplete.listen((event) async
+      {
+        await _playbackCompleteSubscription?.cancel();
+        logDebugMsg("playback complete");
+        episode.isPlaying = false;
+        _getFeedOfEpisode(episode).isPlaying = false;
+        episode.played = true;
+        notifyListeners();
+      });
     
     logDebugMsg("now playing");
     episode.isPlaying = true;
     _getFeedOfEpisode(episode).isPlaying = true;
+    episode.played = false;
     notifyListeners();
   }
 
@@ -565,9 +578,22 @@ class DataModel extends ChangeNotifier
   {
     episode.isPlaying = false;
     _getFeedOfEpisode(episode).isPlaying = false;
-    await _playbackPositionSubscription?.cancel();
     await _audioPlayer.pause();
+    await _playbackPositionSubscription?.cancel();
+    await _playbackCompleteSubscription?.cancel();
     logDebugMsg("now paused");
+    notifyListeners();
+  }
+
+  //*********************************************
+
+  Future<void> seekEpisode(Episode episode, Duration newPosition) async
+  {
+    logDebugMsg("user requested seek to ${newPosition.inSeconds}");
+
+    // set it now since the onPositionChanged callback registered in playEpisode may not be called for a few milliseconds
+    episode.playbackPosition = newPosition;
+    await _audioPlayer.seek(newPosition);
     notifyListeners();
   }
 

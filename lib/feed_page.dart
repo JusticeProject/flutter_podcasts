@@ -45,7 +45,7 @@ class FeedPage extends StatelessWidget
                   child:
                     EpisodePreview(episode: episode)
                 ),
-                // TODO: use a builder for a ListView?
+                // TODO: use a builder for a ListView? If I allow more than 10 episodes per Feed then I should consider this
             ],
           ),
         ),
@@ -128,10 +128,8 @@ class EpisodePreview extends StatelessWidget
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // TODO: if the date says 1 hour ago then wait 10 hours... it will still say 1 hour ago
-                // Future.periodic in the Constructor? or initState (StatefulWidget)? cancel it in onDispose, use logDebugMsg to make sure 
-                // it gets called. Wrap with setState. String _prettyPrintDate member variable.
-                // Or just have the user refresh all feeds? But it may not show the updated time if there were no new xml files saved.
+                // If the date says 1 hour ago then wait 10 hours... it will still say 1 hour ago. That's ok, it will update
+                // when the user refreshes or the app/FeedPage reloads.
                 Text(dateTimeUTCToPrettyPrint(episode.datePublishedUTC)),
                 SizedBox(width: 8),
                 Icon(Icons.circle, size: 5),
@@ -144,8 +142,8 @@ class EpisodePreview extends StatelessWidget
                 if (episode.isPlaying)
                   FittedBox(child: SizedBox(width: 30, height: 20, child: SpectrumBars())),
                 Spacer(),
-                DownloadButton(episode: episode),
-                PlayButton(episode: episode)
+                DownloadButton(episode: episode, largeIcon: false),
+                PlayButton(episode: episode, largeIcon: false)
               ]
             )
           ],
@@ -159,9 +157,10 @@ class EpisodePreview extends StatelessWidget
 
 class DownloadButton extends StatelessWidget
 {
-  const DownloadButton({super.key, required this.episode});
+  const DownloadButton({super.key, required this.episode, required this.largeIcon});
 
   final Episode episode;
+  final bool largeIcon;
 
   //*******************************************************
 
@@ -205,22 +204,25 @@ class DownloadButton extends StatelessWidget
       // show disabled download button until we have some progress to show
       return IconButton(
         icon: Icon(Icons.download, color: Theme.of(context).disabledColor),
+        iconSize: largeIcon ? 60 : null,
         onPressed: () {},
       );
     }
     else if (episode.isDownloading && episode.downloadProgress > 0)
     {
-      // Wrap the indicator with a GestureDetector so we can disable tapping on it
-      return GestureDetector(
-        onTap: () {},
-        // CircularProgressIndicator can take a value from 0 to 1 to show the download progress
-        child: CircularProgressIndicator(value: episode.downloadProgress));
+      // show download progress
+      return IconButton(
+        icon: CircularProgressIndicator(value: episode.downloadProgress),
+        iconSize: largeIcon ? 60 : null,
+        onPressed: () {}
+      );
     }
     else if (episode.filename.isEmpty)
     {
       // enable download button
       return IconButton(
         icon: Icon(Icons.download),
+        iconSize: largeIcon ? 60 : null,
         onPressed: () => _onDownloadEpisode(dataModel)
       );
     }
@@ -229,6 +231,7 @@ class DownloadButton extends StatelessWidget
       // show download complete button, can be tapped to remove the download
       return IconButton(
         icon: Icon(Icons.download_done, color: Theme.of(context).colorScheme.primary),
+        iconSize: largeIcon ? 60 : null,
         onPressed: () {
           showDialog(context: context, builder: (context) {
             return AlertDialog(
@@ -254,9 +257,10 @@ class DownloadButton extends StatelessWidget
 
 class PlayButton extends StatelessWidget
 {
-  const PlayButton({super.key, required this.episode});
+  const PlayButton({super.key, required this.episode, required this.largeIcon});
 
   final Episode episode;
+  final bool largeIcon;
 
   //*******************************************************
 
@@ -299,6 +303,7 @@ class PlayButton extends StatelessWidget
       // no downloaded file and it's obviously not playing right now
       return IconButton(
         icon: Icon(Icons.play_arrow_outlined, color: Theme.of(context).disabledColor),
+        iconSize: largeIcon ? 60 : null,
         onPressed: () {}
       );
     }
@@ -307,6 +312,7 @@ class PlayButton extends StatelessWidget
       // it's playing
       return IconButton(
         icon: Icon(Icons.pause),
+        iconSize: largeIcon ? 60 : null,
         onPressed: () => _onPauseEpisode(dataModel),
       );
     }
@@ -315,6 +321,7 @@ class PlayButton extends StatelessWidget
       // we have the file downloaded but it's not playing right now
       return IconButton(
         icon: Icon(Icons.play_arrow),
+        iconSize: largeIcon ? 60 : null,
         onPressed: () => _onPlayEpisode(dataModel)
       );
     }
