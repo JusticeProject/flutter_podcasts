@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:xml/xml.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:timezone/data/latest.dart' as tz;
 
 //*************************************************************************************************
 
@@ -58,29 +57,51 @@ DateTime stringToDateTime(String input)
 
 void main(List<String> args) async
 {
-  tz.initializeTimeZones();
-  // for (var entry in timeZoneDatabase.locations.entries)
-  // {
-  //   if (entry.key.contains("CST") || entry.key.contains("PDT") || entry.key.contains("PST") || entry.key.contains("Chicago"))
-  //   {
-  //     print(entry.key);
-  //   }
-  // }
+  final url = Uri.parse(
+    'https://www.podtrac.com/pts/redirect.mp3/pdst.fm/e/chrt.fm/track/FGADCC/pscrb.fm/rss/p/tracking.swap.fm/track/bwUd3PHC9DH3VTlBXDTt/traffic.megaphone.fm/SBP7591503528.mp3?updated=1749335536');
 
-  List<String> times = [
-    "Fri, 30 May 2025 20:24:00 -0000",
-    "Tue, 03 Jun 2025 21:00:05 PDT",
-    "Thu, 22 May 2025 15:43:21 +0000",
-    "Mon, 19 May 2025 12:00:00 -0800",
-    "Fri, 29 Sep 2023 19:00:00 GMT"];
+  final client = http.Client();
+  final request = http.Request('GET', url);
+  print("Default maxRedirects: ${request.maxRedirects}");
+  request.maxRedirects = 10;
 
-  for (String time in times)
+  try
   {
-    print("converting $time");
-    DateTime result = stringToDateTime(time);
-    print(result);
-    print(result.timeZoneName);
-    print(result.timeZoneOffset);
+    http.StreamedResponse streamedResponse = await client.send(request).timeout(Duration(seconds: 60));
+    print("contentLength = ${streamedResponse.contentLength}");
+    print("statusCode = ${streamedResponse.statusCode}");
+
+    int counter = 0;
+    File file = File("C:\\Users\\mozde\\Desktop\\test.mp3");
+    IOSink sink = file.openWrite(mode: FileMode.write);
+
+    // the stream is the response body data, no headers
+    int numChunks = 0;
+    await for (List<int> dataChunk in streamedResponse.stream)
+    {
+      //print("dataChunk.length = ${dataChunk.length}");
+      sink.add(dataChunk);
+      counter += dataChunk.length;
+      numChunks++;
+    }
+    // was 73793316, now 74362785
+    print("counter = $counter");
+    print("numChunks = $numChunks");
+    await sink.flush();
+    await sink.close();
+    
+
+    //http.Response response = await http.Response.fromStream(streamedResponse);
+    //print('Status code: ${response.statusCode}');
+    //print('Body Length: ${response.body.length}');
+  }
+  catch (err)
+  {
+    print(err.toString());
+  }
+  finally
+  {
+    client.close();
   }
 
   print("main done");

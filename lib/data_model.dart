@@ -396,22 +396,14 @@ class DataModel extends ChangeNotifier
     feed.numEpisodesDownloading++;
     episode.isDownloading = true;
     notifyListeners();
-    
-    // TODO: is there a way to http.get partial data? if failed, remove partial download?
-    // try streams, as bytes come in write them to disk, this will be faster and use less RAM, can show progress of download
 
     try
     {
       // use guid for filename
       String fullLocalPath = combinePaths(episode.localDir, episode.guid);
 
-      logDebugMsg("starting download");
-      final resp = await http.get(Uri.parse(episode.url));
-      if (resp.statusCode ~/ 100 != 2)
-      {
-        throw Exception("Error when fetching episode ${episode.title}: ${resp.statusCode}");
-      }
-      await saveToFileBytes(fullLocalPath, resp.bodyBytes);
+      logDebugMsg("starting download for url ${episode.url}");
+      await _smartFetchFile(episode.url, fullLocalPath);
       logDebugMsg("done saving file to localDir");
 
       // once it successfully downloads, update the filename in the Episode
@@ -422,7 +414,8 @@ class DataModel extends ChangeNotifier
     }
     catch (err)
     {
-      rethrow; // even with this rethrow the finally clause still runs
+      logDebugMsg(err.toString());
+      rethrow; // even with rethrow the finally clause still runs
     }
     finally
     {
@@ -431,6 +424,59 @@ class DataModel extends ChangeNotifier
 
       logDebugMsg("Episode and Feed updated, notifying listeners");
       notifyListeners();
+    }
+  }
+
+  //*********************************************
+
+  Future<void> _smartFetchFile(String url, String localFilename) async
+  {
+    final client = http.Client();
+    final request = http.Request('GET', Uri.parse(url));
+    request.maxRedirects = 15; // default is 5, some podcast CDNs redirect us more than 5, so use a safe number
+
+    File file = File(localFilename);
+    IOSink sink = file.openWrite(mode: FileMode.write);
+
+    try
+    {
+      http.StreamedResponse streamedResponse = await client.send(request).timeout(Duration(seconds: 60));
+      if (streamedResponse.statusCode ~/ 100 != 2)
+      {
+        throw Exception("statusCode = ${streamedResponse.statusCode}");
+      }
+
+      // The stream is the response body data, no headers. As bytes come in write them to disk, this is faster 
+      // and uses less RAM than http.get followed by File.writeAsBytes. Plus, we can show progress of download.
+      int bytesReceived = 0;
+      await for (List<int> dataChunk in streamedResponse.stream)
+      {
+        // TODO: using streamedResponse.contentLength and dataChunk.length we can determine the download progress,
+        // add a double to the Episode class, notifyListeners, don't notify for every chunk, maybe every 1000 chunks?
+        // will need to pass in the Episode to this function
+        sink.add(dataChunk);
+        bytesReceived += dataChunk.length;
+      }
+
+      await sink.flush();
+      await sink.close();
+      
+      //http.Response response = await http.Response.fromStream(streamedResponse);
+      //print('Status code: ${response.statusCode}');
+      //print('Body Length: ${response.body.length}');
+    }
+    catch (err)
+    {
+      logDebugMsg(err.toString());
+      await sink.flush();
+      await sink.close();
+      await File(localFilename).delete();
+      // TODO: how do I test partial download?
+      rethrow;
+    }
+    finally
+    {
+      client.close();
     }
   }
 
