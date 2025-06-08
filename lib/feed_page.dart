@@ -136,7 +136,10 @@ class EpisodePreview extends StatelessWidget
                 SizedBox(width: 8),
                 Icon(Icons.circle, size: 5),
                 SizedBox(width: 8),
-                const Text("unplayed"), // TODO: played vs 40 min vs 38 min left + progress bar
+                const Text("unplayed"), 
+                // TODO: played vs 40 min vs 38 min left + progress bar, may have to keep it as unplayed until the first time we
+                // play the file and AudioPlayer gives us the length, the XML file won't be reliable for giving us the length because
+                // the CDN can insert ads of different lengths
                 SizedBox(width: 8),
                 if (episode.isPlaying)
                   FittedBox(child: SizedBox(width: 30, height: 20, child: SpectrumBars())),
@@ -197,14 +200,21 @@ class DownloadButton extends StatelessWidget
   {
     DataModel dataModel = context.watch<DataModel>();
 
-    if (episode.isDownloading)
+    if (episode.isDownloading && episode.downloadProgress == 0.0)
     {
-      // TODO: the CircularProgressIndicator can take a value from 0 to 1 to show the progress
-
+      // show disabled download button until we have some progress to show
+      return IconButton(
+        icon: Icon(Icons.download, color: Theme.of(context).disabledColor),
+        onPressed: () {},
+      );
+    }
+    else if (episode.isDownloading && episode.downloadProgress > 0)
+    {
       // Wrap the indicator with a GestureDetector so we can disable tapping on it
       return GestureDetector(
         onTap: () {},
-        child: CircularProgressIndicator());
+        // CircularProgressIndicator can take a value from 0 to 1 to show the download progress
+        child: CircularProgressIndicator(value: episode.downloadProgress));
     }
     else if (episode.filename.isEmpty)
     {

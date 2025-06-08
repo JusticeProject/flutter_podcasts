@@ -395,6 +395,7 @@ class DataModel extends ChangeNotifier
     // this will prevent user from refreshing while downloading, that would cause too many side effects
     feed.numEpisodesDownloading++;
     episode.isDownloading = true;
+    episode.downloadProgress = 0.0;
     notifyListeners();
 
     try
@@ -403,7 +404,7 @@ class DataModel extends ChangeNotifier
       String fullLocalPath = combinePaths(episode.localDir, episode.guid);
 
       logDebugMsg("starting download for url ${episode.url}");
-      await _smartFetchFile(episode.url, fullLocalPath);
+      await _smartFetchEpisode(episode, fullLocalPath);
       logDebugMsg("done saving file to localDir");
 
       // once it successfully downloads, update the filename in the Episode
@@ -429,10 +430,10 @@ class DataModel extends ChangeNotifier
 
   //*********************************************
 
-  Future<void> _smartFetchFile(String url, String localFilename) async
+  Future<void> _smartFetchEpisode(Episode episode, String localFilename) async
   {
     final client = http.Client();
-    final request = http.Request('GET', Uri.parse(url));
+    final request = http.Request('GET', Uri.parse(episode.url));
     request.maxRedirects = 15; // default is 5, some podcast CDNs redirect us more than 5, so use a safe number
 
     File file = File(localFilename);
@@ -440,6 +441,7 @@ class DataModel extends ChangeNotifier
 
     try
     {
+      // throws an Exception on timeout
       http.StreamedResponse streamedResponse = await client.send(request).timeout(Duration(seconds: 60));
       if (streamedResponse.statusCode ~/ 100 != 2)
       {
@@ -448,14 +450,22 @@ class DataModel extends ChangeNotifier
 
       // The stream is the response body data, no headers. As bytes come in write them to disk, this is faster 
       // and uses less RAM than http.get followed by File.writeAsBytes. Plus, we can show progress of download.
-      int bytesReceived = 0;
+      double bytesReceived = 0.0;
+      double bytesExpected = streamedResponse.contentLength?.toDouble() ?? 1.0;
+      int numChunksReceived = 0;
       await for (List<int> dataChunk in streamedResponse.stream)
       {
-        // TODO: using streamedResponse.contentLength and dataChunk.length we can determine the download progress,
-        // add a double to the Episode class, notifyListeners, don't notify for every chunk, maybe every 1000 chunks?
-        // will need to pass in the Episode to this function
+        // write data chunk to the file we already opened
         sink.add(dataChunk);
+
         bytesReceived += dataChunk.length;
+        numChunksReceived++;
+        if (numChunksReceived % 1000 == 0)
+        {
+          // the UI can update the download progress every 1000 chunks
+          episode.downloadProgress = bytesReceived / bytesExpected;
+          notifyListeners();
+        }
       }
 
       await sink.flush();
@@ -472,7 +482,7 @@ class DataModel extends ChangeNotifier
       await sink.close();
       await File(localFilename).delete();
       // TODO: how do I test partial download?
-      rethrow;
+      rethrow; // even with rethrow the finally clause still runs
     }
     finally
     {
@@ -485,6 +495,7 @@ class DataModel extends ChangeNotifier
   Future<void> removeEpisode(Episode episode) async
   {
     // if episode is playing, pause it first
+    // TODO: maybe I should stop the episode instead of pause
     if (episode.isPlaying)
     {
       await pauseEpisode(episode);

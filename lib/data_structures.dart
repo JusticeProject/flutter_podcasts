@@ -44,6 +44,7 @@ class Episode
   final String guid;
   final String url;
   bool isDownloading = false;
+  double downloadProgress = 0.0; // ranges from 0.0 to 1.0
 
   bool isPlaying = false;
   // TODO: what if file is playing while user refreshes?
