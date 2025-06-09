@@ -544,10 +544,6 @@ class DataModel extends ChangeNotifier
         episode.playbackPosition = d;
         notifyListeners();
       }
-      else
-      {
-        logDebugMsg("!! Ignoring position $d while not playing");
-      }
     }
 
     // This is a callback that we will register soon. It will be called when an Episode finished playing.
@@ -611,9 +607,12 @@ class DataModel extends ChangeNotifier
   {
     logDebugMsg("user requested seek to $newPosition");
 
-    // set it now since the onPositionChanged callback registered in playEpisode may not be called for a few milliseconds
+    // set it now since the onPositionChanged callback registered in playEpisode may not be called for a few milliseconds,
+    // set it before and after the seek to prevent the progress bar from jumping for a split second.
+    // I could also pause/resume the position update subscription
     episode.playbackPosition = newPosition;
     await _audioPlayer.seek(newPosition);
+    episode.playbackPosition = newPosition;
     notifyListeners();
   }
 

@@ -50,6 +50,8 @@ class Episode
   bool played = false;
   // TODO: need to save the positions/played for each file to disk if the duration is > 0, when loading check to see if the positions file has
   // the guid/filename, save to disk in DataModel's destructor?
+  // https://api.flutter.dev/flutter/widgets/RestorationMixin-mixin.html
+  // https://docs.flutter.dev/platform-integration/android/restore-state-android
   Duration playbackPosition = Duration();
   Duration? playLength;
 

@@ -93,7 +93,6 @@ class EpisodePage extends StatelessWidget
                 SizedBox(height: 10),
                 AudioProgressBar(episode: episode),
                 SizedBox(height: 10),
-                // TODO: need skip ahead 30 seconds, rewind 10 seconds
                 Html(data: episode.description, onLinkTap: (url, attributes, element) => _onLinkTapped(url))
               ],
             ),
@@ -204,21 +203,70 @@ class _AudioProgressBarState extends State<AudioProgressBar>
   {
     DataModel dataModel = context.watch<DataModel>();
     final colorScheme = Theme.of(context).colorScheme;
+    if (!widget.episode.isPlaying)
+    {
+      // Not sure if I should be changing this here in the build function. If you are scrubbing while the episode ends, 
+      // restarting the episode doesn't work right. onChangedEnd isn't getting called so it thinks it is still scrubbing.
+      _scrubbing = false;
+    }
 
-    return Slider(
-      activeColor: colorScheme.primary,
-      secondaryActiveColor: Colors.white,
-      secondaryTrackValue: 1.0,
-      min: 0.0, 
-      max: 1.0, 
-      // If the user is current scrubbing (moving it with their finger) then we use the person's finger to set the current position.
-      // If the user is not scrubbing we use the audio player's current position.
-      value: _scrubbing ? _sliderPosition : durationToSliderValue(widget.episode.playbackPosition, widget.episode.playLength), 
-      // If the episode is playing we enable the slider by providing callbacks. If the episode is not playing we disable the slider
-      // by passing in null for all the callbacks.
-      onChanged: widget.episode.isPlaying ? _onChanged : null, 
-      onChangeStart: widget.episode.isPlaying ? _onChangeStart : null, 
-      onChangeEnd: widget.episode.isPlaying ? (newValue) => _onChangeEnd(newValue, dataModel) : null
+    // TODO: need skip ahead 30 seconds, rewind 10 seconds
+    
+    return Column(
+      children: [
+        Slider(
+          activeColor: colorScheme.primary,
+          secondaryActiveColor: Colors.grey,
+          secondaryTrackValue: 1.0,
+          min: 0.0, 
+          max: 1.0, 
+          // If the user is currently scrubbing (moving it with their finger) then we use the person's finger to set the current position.
+          // If the user is not scrubbing we use the audio player's current position.
+          value: _scrubbing ? _sliderPosition : durationToSliderValue(widget.episode.playbackPosition, widget.episode.playLength), 
+          // If the episode is playing we enable the slider by providing callbacks. If the episode is not playing we disable the slider
+          // by passing in null for all the callbacks.
+          onChanged: widget.episode.isPlaying ? _onChanged : null, 
+          onChangeStart: widget.episode.isPlaying ? _onChangeStart : null, 
+          onChangeEnd: widget.episode.isPlaying ? (newValue) => _onChangeEnd(newValue, dataModel) : null
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(playbackDurationPrettyPrint(
+              _scrubbing ? sliderValueToDuration(_sliderPosition, widget.episode.playLength) : widget.episode.playbackPosition, 
+              null)
+            ),
+            Text(playbackDurationPrettyPrint(
+              widget.episode.playLength, 
+              _scrubbing ? sliderValueToDuration(_sliderPosition, widget.episode.playLength) : widget.episode.playbackPosition)
+            )
+          ]
+        )
+      ],
     );
   }
+}
+
+//*************************************************************************************************
+//*************************************************************************************************
+//*************************************************************************************************
+
+String playbackDurationPrettyPrint(Duration? dur, Duration? toSubtract)
+{
+  if (dur == null)
+  {
+    return "";
+  }
+
+  Duration actualDur = Duration(seconds: dur.inSeconds);
+  if (toSubtract != null)
+  {
+    actualDur = actualDur - toSubtract;
+  }
+
+  int hours = actualDur.inHours;
+  int minutes = actualDur.inMinutes - hours * 60;
+  int seconds = actualDur.inSeconds - hours * 3600 - minutes * 60;
+
+  return "${hours.toString()}:${minutes.toString().padLeft(2, "0")}:${seconds.toString().padLeft(2, "0")}";
 }

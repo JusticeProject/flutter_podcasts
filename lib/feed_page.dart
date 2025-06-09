@@ -207,10 +207,13 @@ class DownloadButton extends StatelessWidget
 
     if (episode.isDownloading && episode.downloadProgress == 0.0)
     {
-      // show disabled download button until we have some progress to show
+      // show a grey spinning progress indicator until we have some progress to show
       return IconButton(
-        icon: Icon(Icons.download, color: Theme.of(context).disabledColor),
+        icon: CircularProgressIndicator(color: Theme.of(context).disabledColor),
         iconSize: largeIcon ? 60 : null,
+        // I don't like having to specify exact sizes below in the BoxConstraints, but the progress indicator and Icons.download
+        // were not the same size, so when it switched between the two the layout shifted up/down
+        constraints: largeIcon ? null : BoxConstraints(minWidth: 40, minHeight: 40, maxWidth: 40, maxHeight: 40),
         onPressed: () {},
       );
     }
@@ -220,6 +223,7 @@ class DownloadButton extends StatelessWidget
       return IconButton(
         icon: CircularProgressIndicator(value: episode.downloadProgress),
         iconSize: largeIcon ? 60 : null,
+        constraints: largeIcon ? null : BoxConstraints(minWidth: 40, minHeight: 40, maxWidth: 40, maxHeight: 40),
         onPressed: () {}
       );
     }
