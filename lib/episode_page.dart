@@ -18,20 +18,12 @@ class EpisodePage extends StatelessWidget
 
   //*******************************************************
 
-  // TODO: Audio player:
-
-  // audio player progress bar, can seek
-  // audio player at bottom of each page and on episode page
-  // Persistent bottom sheets can be created and displayed with the [showBottomSheet] function or the [ScaffoldState.showBottomSheet] method.
-  // Ask gemini to create an app that plays .mp3 files with buttons for play, pause, skip ahead 30 seconds, go back 10 seconds
-
   // another audio package, doesn't work on Windows
   // https://pub.dev/packages/just_audio
 
-  // audio only, no video, how do I handle it if user enters rss feed that only has videos?
+  // TODO: audio only, no video, how do I handle it if user enters rss feed that only has videos?
 
-  // stops playing when headphones removed
-  // audio player shows on lockscreen, package:
+  // TODO: audio player shows on lockscreen, stops playing when headphones removed, try this package
   // https://pub.dev/packages/audio_service
 
   // When the user taps a link in the Episode description
@@ -87,6 +79,9 @@ class EpisodePage extends StatelessWidget
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(width: 100, height: 100, child: DownloadButton(episode: episode, largeIcon: true)),
+                    // TODO: need skip ahead 30 seconds, rewind 10 seconds, these would be custom buttons,
+                    // each would calculate the new playbackPosition and then call seek, what if you seek
+                    // beyond the end of the file? does it complete properly?
                     SizedBox(width: 100, height: 100, child: PlayButton(episode: episode, largeIcon: true))
                   ],
                 ),
@@ -205,12 +200,10 @@ class _AudioProgressBarState extends State<AudioProgressBar>
     final colorScheme = Theme.of(context).colorScheme;
     if (!widget.episode.isPlaying)
     {
-      // Not sure if I should be changing this here in the build function. If you are scrubbing while the episode ends, 
-      // restarting the episode doesn't work right. onChangedEnd isn't getting called so it thinks it is still scrubbing.
+      // If you are scrubbing while the episode ends then restarting the episode doesn't work right. 
+      // onChangedEnd won't get called so it thinks it is still scrubbing.
       _scrubbing = false;
     }
-
-    // TODO: need skip ahead 30 seconds, rewind 10 seconds
     
     return Column(
       children: [

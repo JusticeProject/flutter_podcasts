@@ -338,7 +338,7 @@ void showAddFeedDialog(BuildContext context, void Function(DataModel dataModel, 
   String url = "";
   // don't need to call watch for the DataModel
   DataModel dataModel = Provider.of<DataModel>(context, listen: false);
-
+  
   showModalBottomSheet(
     context: context,
     enableDrag: true,
@@ -350,7 +350,7 @@ void showAddFeedDialog(BuildContext context, void Function(DataModel dataModel, 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Text("To add a podcast, enter the URL of the RSS feed:"),
+            const Text("To add a podcast, enter the URL of the RSS feed:", style: TextStyle(fontWeight: FontWeight.bold)),
             TextField(autofocus: true,
               onChanged: (value) {
                 url = value;
@@ -366,8 +366,12 @@ void showAddFeedDialog(BuildContext context, void Function(DataModel dataModel, 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                TextButton(child: const Text('Cancel'), onPressed: () {Navigator.of(context).pop();}),
-                TextButton(child: const Text('Add'),
+                TextButton(
+                  child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)), 
+                  onPressed: () {Navigator.of(context).pop();}
+                ),
+                TextButton(
+                  child: const Text('Add', style: TextStyle(fontWeight: FontWeight.bold)),
                   onPressed: () {
                     if (url.isNotEmpty) {
                       onNewFeed(dataModel, url);
@@ -399,13 +403,13 @@ void showRemoveFeedDialog(BuildContext context, String title, int index, void Fu
         title: Text("Remove $title from library?"),
         actions: <Widget>[
           TextButton(
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
             onPressed: () {
               Navigator.of(context).pop();
             },
           ),
           TextButton(
-            child: const Text('Remove'),
+            child: const Text('Remove', style: TextStyle(fontWeight: FontWeight.bold)),
             onPressed: () {
               onRemoveFeed(dataModel, index);
               Navigator.of(context).pop();
