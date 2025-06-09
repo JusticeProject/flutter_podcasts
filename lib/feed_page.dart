@@ -266,7 +266,6 @@ class PlayButton extends StatelessWidget
 
   void _onPlayEpisode(DataModel dataModel) async
   {
-    logDebugMsg("playing ${episode.title}");
     try
     {
       await dataModel.playEpisode(episode);

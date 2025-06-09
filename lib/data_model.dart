@@ -441,7 +441,7 @@ class DataModel extends ChangeNotifier
     try
     {
       // throws an Exception on timeout
-      http.StreamedResponse streamedResponse = await client.send(request).timeout(Duration(seconds: 60));
+      http.StreamedResponse streamedResponse = await client.send(request).timeout(Duration(seconds: 120));
       if (streamedResponse.statusCode ~/ 100 != 2)
       {
         throw Exception("statusCode = ${streamedResponse.statusCode}");
@@ -459,9 +459,9 @@ class DataModel extends ChangeNotifier
 
         bytesReceived += dataChunk.length;
         numChunksReceived++;
-        if (numChunksReceived % 1000 == 0)
+        if (numChunksReceived % 100 == 0)
         {
-          // the UI can update the download progress every 1000 chunks
+          // the UI can update the download progress every x chunks received
           episode.downloadProgress = bytesReceived / bytesExpected;
           notifyListeners();
         }
@@ -518,9 +518,10 @@ class DataModel extends ChangeNotifier
 
   Future<void> playEpisode(Episode episode) async
   {
+    // First check if a file is already playing. If so it's probably a different file, so this will pause it and 
+    // update that Episode's state
     if (_audioPlayer.state == PlayerState.playing)
     {
-      // a different file is probably playing, pause it and keep that position, also mark it as not playing
       for (Feed feed in _feedList)
       {
         for (Episode episode in feed.episodes)
@@ -533,39 +534,52 @@ class DataModel extends ChangeNotifier
       }
     }
 
+    // This is a callback that we will register soon. It will be called periodically while the episode is playing
+    // to give us updates on the current position in the file.
+    void onPlaybackPositionUpdates(Duration d)
+    {
+      if (episode.isPlaying)
+      {
+        // Notify the listeners so they can update their progress bar.
+        episode.playbackPosition = d;
+        notifyListeners();
+      }
+      else
+      {
+        logDebugMsg("!! Ignoring position $d while not playing");
+      }
+    }
+
+    // This is a callback that we will register soon. It will be called when an Episode finished playing.
+    void onPlaybackComplete(void nothing) async
+    {
+      await _playbackCompleteSubscription?.cancel(); // cancel this callback so we don't get called again
+      await _playbackPositionSubscription?.cancel();
+      logDebugMsg("playback complete");
+      episode.isPlaying = false;
+      _getFeedOfEpisode(episode).isPlaying = false;
+      episode.played = true;
+      episode.playbackPosition = Duration(); // if we play the Episode again it will start at the beginning
+      notifyListeners();
+    }
+
     // AudioPlayer API usage:
     // https://pub.dev/packages/audioplayers
     // https://github.com/bluefireteam/audioplayers/blob/main/getting_started.md
 
-    String fullLocalPath = combinePaths(episode.localDir, episode.filename);
-    await _audioPlayer.setSourceDeviceFile(fullLocalPath);
-    await _audioPlayer.seek(episode.playbackPosition);
-    logDebugMsg("done seeking to ${episode.playbackPosition}, player reports position ${await _audioPlayer.getCurrentPosition()}");
-    await _audioPlayer.setReleaseMode(ReleaseMode.stop); // without this I couldn't seek+resume to position 0 after finishing an episode
-    await _audioPlayer.resume();
-    episode.playLength = await _audioPlayer.getDuration();
-    _playbackPositionSubscription = _audioPlayer.onPositionChanged.listen((Duration d)
-      {
-        /*if (d.inSeconds == 0)
-        {
-          logDebugMsg("onPositionChanged to 0");
-        }*/
-        // notifyListeners so they can update their progress bar
-        episode.playbackPosition = d;
-        notifyListeners();
-      });
+    logDebugMsg("${episode.title} will start at ${episode.playbackPosition}");
 
-    _playbackCompleteSubscription = _audioPlayer.onPlayerComplete.listen((event) async
-      {
-        await _playbackCompleteSubscription?.cancel();
-        logDebugMsg("playback complete");
-        episode.isPlaying = false;
-        _getFeedOfEpisode(episode).isPlaying = false;
-        episode.played = true;
-        notifyListeners();
-      });
+    // Register one callback before we start playing. Don't want a scenario where we start playing and the episode finishes
+    // but we haven't registered the onPlayerComplete callback yet, thus we wouldn't get a chance to save some info.
+    _playbackCompleteSubscription = _audioPlayer.onPlayerComplete.listen(onPlaybackComplete);
+
+    String fullLocalPath = combinePaths(episode.localDir, episode.filename);
+    await _audioPlayer.play(DeviceFileSource(fullLocalPath), position: episode.playbackPosition);
+    episode.playLength = await _audioPlayer.getDuration();
+    // Register for position updates only after it has started playing and we have the total duration of the file
+    _playbackPositionSubscription = _audioPlayer.onPositionChanged.listen(onPlaybackPositionUpdates);
     
-    logDebugMsg("now playing");
+    logDebugMsg("now playing at position ${await _audioPlayer.getCurrentPosition()}");
     episode.isPlaying = true;
     _getFeedOfEpisode(episode).isPlaying = true;
     episode.played = false;
@@ -578,10 +592,16 @@ class DataModel extends ChangeNotifier
   {
     episode.isPlaying = false;
     _getFeedOfEpisode(episode).isPlaying = false;
+
+    // The order seems critical here:
+    // pause the audio player, the position updates should stop arriving soon,
+    // cancel the position update subscription so we don't get any erroneous values, 
+    // cancel the playbackComplete callback last after the player has finished pausing so we don't miss a critical state change
     await _audioPlayer.pause();
     await _playbackPositionSubscription?.cancel();
     await _playbackCompleteSubscription?.cancel();
-    logDebugMsg("now paused");
+
+    logDebugMsg("${episode.title} paused at ${episode.playbackPosition}");
     notifyListeners();
   }
 
@@ -589,7 +609,7 @@ class DataModel extends ChangeNotifier
 
   Future<void> seekEpisode(Episode episode, Duration newPosition) async
   {
-    logDebugMsg("user requested seek to ${newPosition.inSeconds}");
+    logDebugMsg("user requested seek to $newPosition");
 
     // set it now since the onPositionChanged callback registered in playEpisode may not be called for a few milliseconds
     episode.playbackPosition = newPosition;
