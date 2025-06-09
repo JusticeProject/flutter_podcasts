@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'menu.dart';
 import 'feed_page.dart';
 import 'data_structures.dart';
 import 'utilities.dart';
@@ -225,7 +227,7 @@ class _LibraryPageState extends State<LibraryPage>
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
-        actions: [IconButton(onPressed: () => _onPopulateLibrary(dataModel), icon: Icon(Icons.rss_feed))],
+        actions: [IconButton(onPressed: () => _onPopulateLibrary(dataModel), icon: Icon(Icons.rss_feed)), Menu()],
       ),
       body: SafeArea(
         child: Center(
@@ -445,13 +447,18 @@ List<String> urls = [
 "https://feeds.megaphone.fm/kindafunnypodcast", // Kinda Funny Podcast
 "https://feeds.megaphone.fm/ROOSTER8838278962", // Kinda Funny Games Daily
 // Sacred Symbols (Playstation)
+// Dev Game Club
 // 8-4 Play
 // Rust In Production
 // Rustacean Station
 // Fallthrough (Go)
 // Abroad in Japan
 // PowerUp / EETimes
+"https://feeds.simplecast.com/8fQdS6Dx", // MIT Chalk Radio
+// Numberphile
 // Lex Friedman
+// Bangkok Podcast
+// Hidden Experience
 // Foundation for Middle East Peace (FMEP)
 // Above and Beyond, Armin, Tiesto, Gareth Emery, Paul van Dyk
 ];
