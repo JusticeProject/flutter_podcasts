@@ -35,6 +35,7 @@ void logDebugMsg(String msg)
 {
   if (kDebugMode)
   {
+    // TODO: in-app log msg viewer would be handy, any time logDebugMsg is called or showMessageToUser, viewable from menu item
     print(msg);
   }
 }

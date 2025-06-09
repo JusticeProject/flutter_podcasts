@@ -34,6 +34,7 @@ class EpisodePage extends StatelessWidget
   // audio player shows on lockscreen, package:
   // https://pub.dev/packages/audio_service
 
+  // When the user taps a link in the Episode description
   void _onLinkTapped(String? url) async
   {
     if (url != null)
@@ -103,6 +104,8 @@ class EpisodePage extends StatelessWidget
   }
 }
 
+//*************************************************************************************************
+//*************************************************************************************************
 //*************************************************************************************************
 
 class AudioProgressBar extends StatefulWidget
@@ -200,8 +203,12 @@ class _AudioProgressBarState extends State<AudioProgressBar>
   Widget build(BuildContext context)
   {
     DataModel dataModel = context.watch<DataModel>();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Slider(
+      activeColor: colorScheme.primary,
+      secondaryActiveColor: Colors.white,
+      secondaryTrackValue: 1.0,
       min: 0.0, 
       max: 1.0, 
       // If the user is current scrubbing (moving it with their finger) then we use the person's finger to set the current position.

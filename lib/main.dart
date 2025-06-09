@@ -40,7 +40,7 @@ class PodcastApp extends StatelessWidget
       // could try a different font, maybe textTheme: GoogleFonts.latoTextTheme() from google_fonts package:
       // https://pub.dev/packages/google_fonts
       theme: ThemeData(
-        colorScheme: ColorScheme.dark(), 
+        colorScheme: ColorScheme.dark(primary: const Color(0xff03dac6)), 
         fontFamily: 'serif'
       ),
       home: LibraryPage(),
