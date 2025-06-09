@@ -39,7 +39,7 @@ class PodcastApp extends StatelessWidget
     return MaterialApp(
       title: 'Simple Podcasts App',
       scaffoldMessengerKey: Provider.of<DataModel>(context, listen: false).scaffoldMessengerKey,
-      // could try a different font, maybe textTheme: GoogleFonts.latoTextTheme() from google_fonts package:
+      // TODO: try a different font, maybe textTheme: GoogleFonts.latoTextTheme() from google_fonts package:
       // https://pub.dev/packages/google_fonts
       theme: ThemeData(
         colorScheme: ColorScheme.dark(primary: const Color(0xff03dac6)), 
@@ -253,28 +253,31 @@ class _LibraryPageState extends State<LibraryPage>
               return RefreshIndicator(
                 // if DataModel is downloading then the refresh will stop immediately
                 onRefresh: () => _onRefresh(dataModel),
-                child: GridView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(), // this ensures you can drag down to refresh even if the library is too small to scroll
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, 
-                    mainAxisSpacing: 20, 
-                    crossAxisSpacing: 18,
-                    childAspectRatio: 0.8, // changes it from square to rectangular, with more space vertically for the text below the albumArt
+                child: Container(
+                  margin: EdgeInsets.only(bottom: 80), // when the persistent bottom sheet is displayed we need room to scroll lower
+                  child: GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(), // this ensures you can drag down to refresh even if the library is too small to scroll
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2, 
+                      mainAxisSpacing: 20, 
+                      crossAxisSpacing: 18,
+                      childAspectRatio: 0.8, // changes it from square to rectangular, with more space vertically for the text below the albumArt
+                    ),
+                    controller: _scrollController,
+                    padding: EdgeInsets.all(18),
+                    itemCount: _feedList.length,
+                    itemBuilder: (context, index) {
+                      Feed feed = _feedList[index];
+                      return GestureDetector(
+                        // disable tapping on each albumArt while refreshing
+                        onTap: dataModel.isBusy ? null : () => _onFeedPreviewTapped(context, feed),
+                        // disable removing the podcast feed while refreshing, or while downloading episodes for this feed
+                        onLongPress: (dataModel.isBusy || feed.numEpisodesDownloading > 0) ? null : () => 
+                          showRemoveFeedDialog(context, feed.title, index, _onRemoveFeed), 
+                        child: FeedPreview(feed: feed)
+                      );
+                    }
                   ),
-                  controller: _scrollController,
-                  padding: EdgeInsets.all(18),
-                  itemCount: _feedList.length,
-                  itemBuilder: (context, index) {
-                    Feed feed = _feedList[index];
-                    return GestureDetector(
-                      // disable tapping on each albumArt while refreshing
-                      onTap: dataModel.isBusy ? null : () => _onFeedPreviewTapped(context, feed),
-                      // disable removing the podcast feed while refreshing, or while downloading episodes for this feed
-                      onLongPress: (dataModel.isBusy || feed.numEpisodesDownloading > 0) ? null : () => 
-                        showRemoveFeedDialog(context, feed.title, index, _onRemoveFeed), 
-                      child: FeedPreview(feed: feed)
-                    );
-                  }
                 ),
               );
             }
@@ -283,16 +286,31 @@ class _LibraryPageState extends State<LibraryPage>
       ),
       floatingActionButton: Consumer<DataModel>(
         builder: (context, dataModel, child) {
-          return FloatingActionButton.extended(
-            label: Text("Add podcast"),
-            isExtended: _showExtendedButton, // dynamically switch from extended to regular FloatingActionButton based on scroll position
-            // we disable the Add Podcast button when the library of feeds is loading or already adding a new one
-            onPressed: dataModel.isBusy ? null : () => showAddFeedDialog(context, _onNewFeed),
-            icon: const Icon(Icons.add),
+          return Container(
+            margin: EdgeInsets.only(bottom: 75), // move the button up in case the MiniPlayer is visible
+            child: FloatingActionButton.extended(
+              label: Text("Add podcast"),
+              isExtended: _showExtendedButton, // dynamically switch from extended to regular FloatingActionButton based on scroll position
+              // we disable the Add Podcast button when the library of feeds is loading or already adding a new one
+              onPressed: dataModel.isBusy ? null : () => showAddFeedDialog(context, _onNewFeed),
+              icon: const Icon(Icons.add),
+            ),
           );  
         },
         
-      )
+      ),
+      bottomSheet: Consumer<DataModel>(
+        builder: (context, dataModel, child) {
+          if (dataModel.currentEpisode != null)
+          {
+            return MiniPlayer(episode: dataModel.currentEpisode!);
+          }
+          else
+          {
+            return const SizedBox.shrink();
+          }
+        },
+      ),
     );
   }
 }

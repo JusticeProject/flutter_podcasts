@@ -30,7 +30,7 @@ class _SpectrumBarsState extends State<SpectrumBars>
   void initState() {
     //logDebugMsg("SpectrumBars init");
     _progress = 0.0;
-    _timer = Timer.periodic(Duration(milliseconds: 30), _onTimerTick);
+    _timer = Timer.periodic(Duration(milliseconds: 40), _onTimerTick);
     super.initState();
   }
 
@@ -47,7 +47,7 @@ class _SpectrumBarsState extends State<SpectrumBars>
 
   void _onTimerTick(Timer timer)
   {
-    double newProgress = _progress + 0.075;
+    double newProgress = _progress + 0.12;
     if (newProgress > 2 * math.pi)
     {
       newProgress -= 2 * math.pi;

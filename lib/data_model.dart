@@ -31,6 +31,9 @@ class DataModel extends ChangeNotifier
   bool _failedToLoad = false;
   bool get failedToLoad => _failedToLoad;
 
+  Episode? _currentEpisode;
+  Episode? get currentEpisode => _currentEpisode;
+
   // this scaffold messenger key is used to show the SnackBar (toast) outside of a build function since otherwise 
   // we would need the BuildContext
   final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -492,6 +495,11 @@ class DataModel extends ChangeNotifier
 
   Future<void> removeEpisode(Episode episode) async
   {
+    if (_currentEpisode == episode)
+    {
+      _currentEpisode = null;
+    }
+
     // if episode is playing, pause it first
     if (episode.isPlaying)
     {
@@ -510,6 +518,16 @@ class DataModel extends ChangeNotifier
         notifyListeners();
       }
     }
+  }
+
+  //*********************************************
+  //*********************************************
+  //*********************************************
+
+  void showMiniPlayer(Episode episode)
+  {
+    _currentEpisode = episode;
+    notifyListeners();
   }
 
   //*********************************************
@@ -556,6 +574,7 @@ class DataModel extends ChangeNotifier
       _getFeedOfEpisode(episode).isPlaying = false;
       episode.played = true;
       episode.playbackPosition = Duration(); // if we play the Episode again it will start at the beginning
+      _currentEpisode = null;
       notifyListeners();
     }
 

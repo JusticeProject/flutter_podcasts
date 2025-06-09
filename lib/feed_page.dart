@@ -50,6 +50,18 @@ class FeedPage extends StatelessWidget
           ),
         ),
       ),
+      bottomSheet: Consumer<DataModel>(
+        builder: (context, dataModel, child) {
+          if (dataModel.currentEpisode != null)
+          {
+            return MiniPlayer(episode: dataModel.currentEpisode!);
+          }
+          else
+          {
+            return const SizedBox.shrink();
+          }
+        },
+      ),
     );
   }
 }
@@ -281,6 +293,9 @@ class PlayButton extends StatelessWidget
     try
     {
       await dataModel.playEpisode(episode);
+      // TODO: when should the bottom sheet be hidden? does it handle episode completion? what if that episode
+      // has been removed? what about when a SnackBar is shown due to showMessageToUser?
+      dataModel.showMiniPlayer(episode);
     }
     catch (err)
     {
@@ -336,5 +351,39 @@ class PlayButton extends StatelessWidget
         onPressed: () => _onPlayEpisode(dataModel)
       );
     }
+  }
+}
+
+//*************************************************************************************************
+//*************************************************************************************************
+//*************************************************************************************************
+
+class MiniPlayer extends StatelessWidget
+{
+  const MiniPlayer({super.key, required this.episode});
+
+  final Episode episode;
+
+  // TODO: show albumArt on left side of MiniPlayer? would need to get the Feed object, or put a reference to
+  // the albumArt in the Episode class? then put albumArt on EpisodePage too?
+
+  @override
+  Widget build(BuildContext context)
+  {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => EpisodePage(episode: episode))),
+      child: Container(
+        color: Colors.grey[850],
+        padding: EdgeInsets.all(10),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(child: 
+              Text(episode.title, maxLines: 2, overflow: TextOverflow.fade, style: TextStyle(fontWeight: FontWeight.bold))
+            ),
+            PlayButton(episode: episode, largeIcon: false)
+        ]),
+      ),
+    );
   }
 }
