@@ -128,8 +128,6 @@ class PlayButton extends StatelessWidget
     try
     {
       await dataModel.playEpisode(episode);
-      // TODO: when should the bottom sheet be hidden? does it handle episode completion? what if that episode
-      // has been removed? what about when a SnackBar is shown due to showMessageToUser?
       dataModel.showMiniPlayer(episode);
     }
     catch (err)
@@ -198,8 +196,6 @@ class MiniPlayer extends StatelessWidget
   const MiniPlayer({super.key, required this.episode});
 
   final Episode episode;
-
-  // TODO: I could move this Widget and the PlayButton/DownloadButton to a separate file, since they aren't only used on the FeedPage
 
   @override
   Widget build(BuildContext context)

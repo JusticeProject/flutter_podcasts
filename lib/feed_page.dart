@@ -19,16 +19,16 @@ class FeedPage extends StatelessWidget
   @override
   Widget build(BuildContext context)
   {
-    return Scaffold(
-      // TODO: how can I make the AppBar disappear when I scroll down the page?
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: Icon(Icons.arrow_back),
+    return SafeArea(
+      child: Scaffold(
+        // TODO: how can I make the AppBar disappear when I scroll down the page?
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Icon(Icons.arrow_back),
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
+        body: SingleChildScrollView(
           padding: EdgeInsets.only(bottom: 80), // leave some space at the bottom in case the MiniPlayer is visible
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -51,18 +51,18 @@ class FeedPage extends StatelessWidget
             ],
           ),
         ),
-      ),
-      bottomSheet: Consumer<DataModel>(
-        builder: (context, dataModel, child) {
-          if (dataModel.currentEpisode != null)
-          {
-            return MiniPlayer(episode: dataModel.currentEpisode!);
-          }
-          else
-          {
-            return const SizedBox.shrink();
-          }
-        },
+        bottomSheet: Consumer<DataModel>(
+          builder: (context, dataModel, child) {
+            if (dataModel.currentEpisode != null)
+            {
+              return MiniPlayer(episode: dataModel.currentEpisode!);
+            }
+            else
+            {
+              return const SizedBox.shrink();
+            }
+          },
+        ),
       ),
     );
   }
@@ -130,7 +130,7 @@ class EpisodePreview extends StatelessWidget
 
     return Container(
       padding: EdgeInsets.fromLTRB(15, 0, 15, 0),
-      height: 150,
+      //height: 150,
       // the Card is necessary so when the user taps an area that doesn't have text it still navigates to the EpisodePage
       child: Card(
         margin: EdgeInsets.all(0),
@@ -139,8 +139,8 @@ class EpisodePreview extends StatelessWidget
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Divider(),
-            Text(episode.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-            Text(episode.descriptionNoHtml, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey)),
+            Text(episode.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(episode.descriptionNoHtml, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, color: Colors.grey)),
             // TODO: 3 dots icon on right side which shows bottom sheet: Mark as Played/Unplayed, no download
             Row(
               mainAxisAlignment: MainAxisAlignment.start,

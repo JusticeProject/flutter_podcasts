@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'menu.dart';
 import 'feed_page.dart';
@@ -42,9 +43,14 @@ class PodcastApp extends StatelessWidget
       scaffoldMessengerKey: Provider.of<DataModel>(context, listen: false).scaffoldMessengerKey,
       // TODO: try a different font, maybe textTheme: GoogleFonts.latoTextTheme() from google_fonts package:
       // https://pub.dev/packages/google_fonts
+      // TODO: put the fonts in the assets folder, make sure it works by turning off WiFi?
+      // https://fonts.google.com/specimen/Ubuntu
       theme: ThemeData(
         colorScheme: ColorScheme.dark(primary: const Color(0xff03dac6)), 
-        fontFamily: 'serif'
+        //textTheme: GoogleFonts.latoTextTheme(),
+        textTheme: GoogleFonts.ubuntuTextTheme(
+          ThemeData.dark().textTheme,
+        ).apply(bodyColor: Colors.white, displayColor: Colors.white, decorationColor: Colors.white),
       ),
       home: LibraryPage(),
       debugShowCheckedModeBanner: false,
@@ -224,14 +230,14 @@ class _LibraryPageState extends State<LibraryPage>
     //var dataModel = context.watch<DataModel>();
     DataModel dataModel = Provider.of<DataModel>(context, listen: false);
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-        actions: [IconButton(onPressed: () => _onPopulateLibrary(dataModel), icon: Icon(Icons.rss_feed)), Menu()],
-      ),
-      body: SafeArea(
-        child: Consumer<DataModel>(
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          title: Text(widget.title),
+          actions: [IconButton(onPressed: () => _onPopulateLibrary(dataModel), icon: Icon(Icons.rss_feed)), Menu()],
+        ),
+        body: Consumer<DataModel>(
           builder: (context, dataModel, child)
           {
             if (dataModel.failedToLoad)
@@ -281,34 +287,34 @@ class _LibraryPageState extends State<LibraryPage>
               ),
             );
           }
-        )
-      ),
-      floatingActionButton: Consumer<DataModel>(
-        builder: (context, dataModel, child) {
-          return Container(
-            margin: EdgeInsets.only(bottom: 75), // move the button up in case the MiniPlayer is visible
-            child: FloatingActionButton.extended(
-              label: Text("Add podcast"),
-              isExtended: _showExtendedButton, // dynamically switch from extended to regular FloatingActionButton based on scroll position
-              // we disable the Add Podcast button when the library of feeds is loading or already adding a new one
-              onPressed: dataModel.isBusy ? null : () => showAddFeedDialog(context, _onNewFeed),
-              icon: const Icon(Icons.add),
-            ),
-          );  
-        },
-        
-      ),
-      bottomSheet: Consumer<DataModel>(
-        builder: (context, dataModel, child) {
-          if (dataModel.currentEpisode != null)
-          {
-            return MiniPlayer(episode: dataModel.currentEpisode!);
-          }
-          else
-          {
-            return const SizedBox.shrink();
-          }
-        },
+        ),
+        floatingActionButton: Consumer<DataModel>(
+          builder: (context, dataModel, child) {
+            return Container(
+              margin: EdgeInsets.only(bottom: 75), // move the button up in case the MiniPlayer is visible
+              child: FloatingActionButton.extended(
+                label: Text("Add podcast"),
+                isExtended: _showExtendedButton, // dynamically switch from extended to regular FloatingActionButton based on scroll position
+                // we disable the Add Podcast button when the library of feeds is loading or already adding a new one
+                onPressed: dataModel.isBusy ? null : () => showAddFeedDialog(context, _onNewFeed),
+                icon: const Icon(Icons.add),
+              ),
+            );  
+          },
+          
+        ),
+        bottomSheet: Consumer<DataModel>(
+          builder: (context, dataModel, child) {
+            if (dataModel.currentEpisode != null)
+            {
+              return MiniPlayer(episode: dataModel.currentEpisode!);
+            }
+            else
+            {
+              return const SizedBox.shrink();
+            }
+          },
+        ),
       ),
     );
   }
