@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -117,13 +118,16 @@ class DataModel extends ChangeNotifier
 
   Future<void> removeFeed(int index) async
   {
-    // TODO: what if the files are in use? what if the .mp3 is playing right now? I should stop (all?) playback first
-    // maybe during loading I could remove files/folders that are marked for deletion
-    // or run some background task that periodically tries to remove them
-    // what if folder 10 is the highest numbered folder and it's marked for removal but then user wants to add a podcast at the end of the list?
-
     try
     {
+      for (Episode episode in _feedList[index].episodes)
+      {
+        if (episode.isPlaying || episode.isDownloading)
+        {
+          throw Exception("Can't remove feed while downloading/playing");
+        }
+      }
+
       Feed feedToRemove = _feedList.removeAt(index);
       await Directory(feedToRemove.localDir).delete(recursive: true);
       notifyListeners();
@@ -131,6 +135,7 @@ class DataModel extends ChangeNotifier
     catch (err)
     {
       logDebugMsg("Exception in removeFeed: ${err.toString()}");
+      rethrow;
     }
   }
 
@@ -466,7 +471,7 @@ class DataModel extends ChangeNotifier
         if (numChunksReceived % 100 == 0)
         {
           // the UI can update the download progress every x chunks received
-          episode.downloadProgress = bytesReceived / bytesExpected;
+          episode.downloadProgress = math.min(bytesReceived / bytesExpected, 1.0);
           notifyListeners();
         }
       }

@@ -41,10 +41,9 @@ class PodcastApp extends StatelessWidget
     return MaterialApp(
       title: 'Simple Podcasts App',
       scaffoldMessengerKey: Provider.of<DataModel>(context, listen: false).scaffoldMessengerKey,
-      // TODO: try a different font, maybe textTheme: GoogleFonts.latoTextTheme() from google_fonts package:
       // https://pub.dev/packages/google_fonts
-      // TODO: put the fonts in the assets folder, make sure it works by turning off WiFi?
       // https://fonts.google.com/specimen/Ubuntu
+      // TODO: put the fonts in the assets folder, make sure it works by turning off WiFi? disable http fetching
       theme: ThemeData(
         colorScheme: ColorScheme.dark(primary: const Color(0xff03dac6)), 
         //textTheme: GoogleFonts.latoTextTheme(),
@@ -154,44 +153,52 @@ class _LibraryPageState extends State<LibraryPage>
 
   //*******************************************************
 
-  void _onNewFeed(DataModel dataModel, String url)
+  Future<void> _onNewFeed(DataModel dataModel, String url) async
   {
-    void futureDone(value)
-    { 
-      // scroll to the bottom of the list but add a delay to give time for 
+    try
+    {
+      // we'll wait for this complete
+      await dataModel.addFeed(url);
+
+      // we won't wait for this: scroll to the bottom of the list after a delay to give time for 
       // the build function to set the size of the grid view
       Future.delayed(Duration(seconds: 1), () {
         _scrollController.animateTo(_scrollController.position.maxScrollExtent + 1000, 
           duration: Duration(seconds: 2), curve: Curves.fastOutSlowIn);
       });
     }
-
-    void futureError(err)
+    catch (err)
     {
       dataModel.showMessageToUser(err.toString());
     }
-
-    dataModel.addFeed(url).then(futureDone).catchError(futureError);
   }
 
   //*******************************************************
 
-  void _onRemoveFeed(DataModel dataModel, int index)
+  Future<void> _onRemoveFeed(DataModel dataModel, int index) async
   {
-    dataModel.removeFeed(index);
+    try
+    {
+      await dataModel.removeFeed(index);
+    }
+    catch (err)
+    {
+      dataModel.showMessageToUser(err.toString());
+    }
   }
 
   //*******************************************************
 
-  Future<void> _onRefresh(DataModel dataModel)
+  Future<void> _onRefresh(DataModel dataModel) async
   {
-    void futureError(err)
+    try
+    {
+      await dataModel.refreshAllFeeds();
+    }
+    catch (err)
     {
       dataModel.showMessageToUser(err.toString());
     }
-
-    Future<void> future = dataModel.refreshAllFeeds().catchError(futureError);
-    return future;
   }
 
   //*******************************************************
@@ -463,7 +470,6 @@ List<String> urls = [
 "https://feeds.megaphone.fm/gamescoop", // Game Scoop!
 "https://feeds.megaphone.fm/ignbeyond", // Beyond!
 "https://feeds.megaphone.fm/ignunlocked", // Podcast Unlocked (Xbox)
-"https://feeds.megaphone.fm/unfiltered", // IGN Unfiltered
 "https://feeds.megaphone.fm/nvc", // Nintendo Voice Chat
 "https://feeds.megaphone.fm/ignconsolewatch", // Next-Gen Console Watch
 "https://feeds.npr.org/510289/podcast.xml", // Planet Money
@@ -474,7 +480,7 @@ List<String> urls = [
 "https://feeds.megaphone.fm/kindafunnypodcast", // Kinda Funny Podcast
 "https://feeds.megaphone.fm/ROOSTER8838278962", // Kinda Funny Games Daily
 // Sacred Symbols (Playstation)
-// Dev Game Club
+"https://feeds.libsyn.com/78795/rss", // Dev Game Club
 // 8-4 Play
 // Rust In Production
 // Rustacean Station
