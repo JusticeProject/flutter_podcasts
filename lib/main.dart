@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -18,6 +20,13 @@ void main()
 {
   //debugPaintSizeEnabled = true; // Enables layout lines
   disableCertError();
+
+  // disable http fetching of the Google fonts, add the license for the Google font
+  GoogleFonts.config.allowRuntimeFetching = false;
+  LicenseRegistry.addLicense(() async* {
+    final license = await rootBundle.loadString('assets/google_fonts/UFL.txt');
+    yield LicenseEntryWithLineBreaks(['google_fonts'], license);
+  });
 
   runApp(
     ChangeNotifierProvider(
@@ -43,10 +52,8 @@ class PodcastApp extends StatelessWidget
       scaffoldMessengerKey: Provider.of<DataModel>(context, listen: false).scaffoldMessengerKey,
       // https://pub.dev/packages/google_fonts
       // https://fonts.google.com/specimen/Ubuntu
-      // TODO: put the fonts in the assets folder, make sure it works by turning off WiFi? disable http fetching
       theme: ThemeData(
         colorScheme: ColorScheme.dark(primary: const Color(0xff03dac6)), 
-        //textTheme: GoogleFonts.latoTextTheme(),
         textTheme: GoogleFonts.ubuntuTextTheme(
           ThemeData.dark().textTheme,
         ).apply(bodyColor: Colors.white, displayColor: Colors.white, decorationColor: Colors.white),

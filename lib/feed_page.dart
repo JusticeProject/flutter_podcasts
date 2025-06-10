@@ -141,7 +141,6 @@ class EpisodePreview extends StatelessWidget
             const Divider(),
             Text(episode.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             Text(episode.descriptionNoHtml, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, color: Colors.grey)),
-            // TODO: 3 dots icon on right side which shows bottom sheet: Mark as Played/Unplayed, no download
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,

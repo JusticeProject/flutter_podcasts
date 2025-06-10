@@ -62,6 +62,7 @@ class DataModel extends ChangeNotifier
 
   void showMessageToUser(String msg)
   {
+    logDebugMsg(msg);
     scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text(msg), duration: Duration(seconds: 10)));
     notifyListeners();
   }
@@ -306,12 +307,21 @@ class DataModel extends ChangeNotifier
           // We'll show a message to the user when it happens.
           try
           {
-            Feed feed = await _gatherFeedInfo(item.path, false);
-            _feedList.add(feed);
+            // There's an oat_primary folder which causes an Exception since it can't be converted to a number, not
+            // sure why it's there. Just skip it since the SnackBar msg will confuse the user.
+            if (getFileNameFromPath(item.path) == "oat_primary")
+            {
+              logDebugMsg("skipping oat_primary folder");
+            }
+            else
+            {
+              Feed feed = await _gatherFeedInfo(item.path, false);
+              _feedList.add(feed);
+            }
           }
           catch (err)
           {
-            showMessageToUser(err.toString());
+            showMessageToUser("folder ${item.path} had error: ${err.toString()}");
           }
         }
       }
