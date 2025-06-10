@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
 
 import 'data_structures.dart';
@@ -111,7 +112,7 @@ String getFeedDescription(XmlDocument xml)
 
 //*************************************************************************************************
 
-Future<List<Episode>> getFeedEpisodes(XmlDocument xml, String localDir) async
+Future<List<Episode>> getFeedEpisodes(XmlDocument xml, String localDir, Image albumArt) async
 {
   XmlElement? channel = xml.firstElementChild?.firstElementChild;
   if (channel != null)
@@ -140,6 +141,7 @@ Future<List<Episode>> getFeedEpisodes(XmlDocument xml, String localDir) async
           title: title.innerText, 
           description: description.innerText, 
           descriptionNoHtml: descriptionNoHtml,
+          albumArt: albumArt,
           datePublishedUTC: dateUTC)
         );
       }

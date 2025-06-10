@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_podcasts/feed_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
 import 'utilities.dart';
 import 'data_structures.dart';
 import 'data_model.dart';
+import 'common_widgets.dart';
 
 //*************************************************************************************************
 
@@ -72,6 +72,7 @@ class EpisodePage extends StatelessWidget
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                Container(margin: EdgeInsets.fromLTRB(150, 10, 150, 10), child: episode.albumArt),
                 Text(episode.title, style: Theme.of(context).textTheme.headlineLarge, textAlign: TextAlign.center),
                 SizedBox(height: 10),
                 Row(

@@ -262,12 +262,13 @@ class DataModel extends ChangeNotifier
     String author = getFeedAuthor(xml);
     String description = getFeedDescription(xml);
     //logDebugMsg("found title $title");
-    List<Episode> episodes = await getFeedEpisodes(xml, localDir);
+    Image albumArt = Image.file(File(imgFilename));
+    List<Episode> episodes = await getFeedEpisodes(xml, localDir, albumArt);
 
     String dateString = getFeedPubDate(xml);
     DateTime dateUTC = stringToDateTimeUTC(dateString);
 
-    Feed feed = Feed(feedNumberInt, localDir, title, author, description, Image.file(File(imgFilename)), dateUTC, episodes);
+    Feed feed = Feed(feedNumberInt, localDir, title, author, description, albumArt, dateUTC, episodes);
 
     // update the number of episodes that have been downloaded
     for (Episode episode in episodes)

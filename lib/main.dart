@@ -7,6 +7,7 @@ import 'data_structures.dart';
 import 'utilities.dart';
 import 'data_model.dart';
 import 'spectrum_bars.dart';
+import 'common_widgets.dart';
 
 //*************************************************************************************************
 //*************************************************************************************************
@@ -230,58 +231,56 @@ class _LibraryPageState extends State<LibraryPage>
         actions: [IconButton(onPressed: () => _onPopulateLibrary(dataModel), icon: Icon(Icons.rss_feed)), Menu()],
       ),
       body: SafeArea(
-        child: Center(
-          child: Consumer<DataModel>(
-            builder: (context, dataModel, child)
+        child: Consumer<DataModel>(
+          builder: (context, dataModel, child)
+          {
+            if (dataModel.failedToLoad)
             {
-              if (dataModel.failedToLoad)
-              {
-                return Icon(Icons.warning, size: 50, color: Colors.amber);
-              }
-
-              if (dataModel.isInitializing)
-              {
-                return const CircularProgressIndicator();
-              }
-
-              if (!dataModel.isRefreshing)
-              {
-                _feedList = dataModel.feedList;
-              }
-  
-              // wrap the GridView with RefreshIndicator which allows you to swipe down to refresh
-              return RefreshIndicator(
-                // if DataModel is downloading then the refresh will stop immediately
-                onRefresh: () => _onRefresh(dataModel),
-                child: Container(
-                  margin: EdgeInsets.only(bottom: 80), // when the persistent bottom sheet is displayed we need room to scroll lower
-                  child: GridView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(), // this ensures you can drag down to refresh even if the library is too small to scroll
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, 
-                      mainAxisSpacing: 20, 
-                      crossAxisSpacing: 18,
-                      childAspectRatio: 0.8, // changes it from square to rectangular, with more space vertically for the text below the albumArt
-                    ),
-                    controller: _scrollController,
-                    padding: EdgeInsets.all(18),
-                    itemCount: _feedList.length,
-                    itemBuilder: (context, index) {
-                      Feed feed = _feedList[index];
-                      return GestureDetector(
-                        // disable tapping on each albumArt while refreshing
-                        onTap: dataModel.isBusy ? null : () => _onFeedPreviewTapped(context, feed),
-                        // disable removing the podcast feed while refreshing, or while downloading episodes for this feed
-                        onLongPress: (dataModel.isBusy || feed.numEpisodesDownloading > 0) ? null : () => 
-                          showRemoveFeedDialog(context, feed.title, index, _onRemoveFeed), 
-                        child: FeedPreview(feed: feed)
-                      );
-                    }
-                  ),
-                ),
-              );
+              return Center(child: Icon(Icons.warning, size: 50, color: Colors.amber));
             }
-          )
+        
+            if (dataModel.isInitializing)
+            {
+              return Center(child: const CircularProgressIndicator());
+            }
+        
+            if (!dataModel.isRefreshing)
+            {
+              _feedList = dataModel.feedList;
+            }
+          
+            // wrap the GridView with RefreshIndicator which allows you to swipe down to refresh
+            return RefreshIndicator(
+              // if DataModel is downloading then the refresh will stop immediately
+              onRefresh: () => _onRefresh(dataModel),
+              child: Container(
+                margin: EdgeInsets.only(bottom: 80), // when the persistent bottom sheet is displayed we need room to scroll lower
+                child: GridView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(), // this ensures you can drag down to refresh even if the library is too small to scroll
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, 
+                    mainAxisSpacing: 20, 
+                    crossAxisSpacing: 18,
+                    childAspectRatio: 0.8, // changes it from square to rectangular, with more space vertically for the text below the albumArt
+                  ),
+                  controller: _scrollController,
+                  padding: EdgeInsets.all(18),
+                  itemCount: _feedList.length,
+                  itemBuilder: (context, index) {
+                    Feed feed = _feedList[index];
+                    return GestureDetector(
+                      // disable tapping on each albumArt while refreshing
+                      onTap: dataModel.isBusy ? null : () => _onFeedPreviewTapped(context, feed),
+                      // disable removing the podcast feed while refreshing, or while downloading episodes for this feed
+                      onLongPress: (dataModel.isBusy || feed.numEpisodesDownloading > 0) ? null : () => 
+                        showRemoveFeedDialog(context, feed.title, index, _onRemoveFeed), 
+                      child: FeedPreview(feed: feed)
+                    );
+                  }
+                ),
+              ),
+            );
+          }
         )
       ),
       floatingActionButton: Consumer<DataModel>(

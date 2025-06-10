@@ -37,6 +37,7 @@ class Episode
     required this.title, 
     required this.description, 
     required this.descriptionNoHtml,
+    required this.albumArt,
     required this.datePublishedUTC});
 
   final String localDir; 
@@ -52,12 +53,23 @@ class Episode
   // the guid/filename, save to disk in DataModel's destructor?
   // https://api.flutter.dev/flutter/widgets/RestorationMixin-mixin.html
   // https://docs.flutter.dev/platform-integration/android/restore-state-android
+  // try didChangeAppLifecycleState in WidgetsBindingObserver class
+  //
+  // class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
+  //
+  // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   if (state == AppLifecycleState.detached) {
+  //     _saveDataToFile();
+  //   }
+  // }
+
   Duration playbackPosition = Duration();
   Duration? playLength;
 
   final String title;
   final String description;
   final String descriptionNoHtml;
+  final Image albumArt;
   final DateTime datePublishedUTC;
 }
 
