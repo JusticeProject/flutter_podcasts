@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -185,6 +187,94 @@ class PlayButton extends StatelessWidget
       );
     }
   }
+}
+
+//*************************************************************************************************
+//*************************************************************************************************
+//*************************************************************************************************
+
+class RewindButton extends StatelessWidget
+{
+  const RewindButton({super.key, required this.episode});
+
+  final Episode episode;
+
+  //*******************************************************
+
+  // TODO: draw circular arrow around each button? this would probably require CustomPaint
+
+  //*******************************************************
+
+  Future<void> _onSeek(DataModel dataModel) async
+  {
+    try
+    {
+      int newSeconds = math.max(episode.playbackPosition.inSeconds - 10, 0);
+      await dataModel.seekEpisode(episode, Duration(seconds: newSeconds));
+    }
+    catch (err)
+    {
+      dataModel.showMessageToUser(err.toString());
+    }
+  }
+
+  //*******************************************************
+
+  @override
+  Widget build(BuildContext context)
+  {
+    DataModel dataModel = context.watch<DataModel>();
+
+    return TextButton(
+      onPressed: episode.isPlaying ? () => _onSeek(dataModel) : null, 
+      child: Text("-10", style: TextStyle(fontSize: 28))
+    );
+  }
+  
+}
+
+//*************************************************************************************************
+//*************************************************************************************************
+//*************************************************************************************************
+
+class FastForwardButton extends StatelessWidget
+{
+  const FastForwardButton({super.key, required this.episode});
+
+  final Episode episode;
+
+  //*******************************************************
+
+  Future<void> _onSeek(DataModel dataModel) async
+  {
+    try
+    {
+      // Don't let the user seek past the end of the file. Stop at 0.5 seconds before the end. This feels more
+      // natural: when we want to mark the episode as played we quickly fast forward near the end of the podcast,
+      // but we don't want to wait a full second before it stops playing. 
+      int lengthMilliseconds = episode.playLength?.inMilliseconds ?? 0;
+      int newMilliseconds = math.min(episode.playbackPosition.inMilliseconds + 30000, lengthMilliseconds - 500);
+      await dataModel.seekEpisode(episode, Duration(milliseconds: newMilliseconds));
+    }
+    catch (err)
+    {
+      dataModel.showMessageToUser(err.toString());
+    }
+  }
+
+  //*******************************************************
+
+  @override
+  Widget build(BuildContext context)
+  {
+    DataModel dataModel = context.watch<DataModel>();
+
+    return TextButton(
+      onPressed: episode.isPlaying ? () => _onSeek(dataModel) : null, 
+      child: Text("+30", style: TextStyle(fontSize: 28))
+    );
+  }
+  
 }
 
 //*************************************************************************************************

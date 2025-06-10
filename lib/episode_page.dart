@@ -80,16 +80,19 @@ class EpisodePage extends StatelessWidget
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(width: 100, height: 100, child: DownloadButton(episode: episode, largeIcon: true)),
-                    // TODO: need skip ahead 30 seconds, rewind 10 seconds, these would be custom buttons,
-                    // could just use a text button with +30 and -10, maybe a circle around it,
-                    // each would calculate the new playbackPosition and then call seek, what if you seek
-                    // beyond the end of the file? does it complete properly?
                     SizedBox(width: 100, height: 100, child: PlayButton(episode: episode, largeIcon: true))
                   ],
                 ),
                 SizedBox(height: 10),
                 AudioProgressBar(episode: episode),
-                SizedBox(height: 10),
+                SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(width: 100, height: 100, child: RewindButton(episode: episode)),
+                    SizedBox(width: 100, height: 100, child: FastForwardButton(episode: episode))
+                ]),
                 Html(data: episode.description, onLinkTap: (url, attributes, element) => _onLinkTapped(url))
               ],
             ),
