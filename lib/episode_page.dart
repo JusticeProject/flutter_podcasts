@@ -80,7 +80,7 @@ class EpisodePage extends StatelessWidget
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(width: 100, height: 100, child: DownloadButton(episode: episode, largeIcon: true)),
-                    SizedBox(width: 100, height: 100, child: PlayButton(episode: episode, largeIcon: true))
+                    SizedBox(width: 100, height: 100, child: PlayButton(episode: episode, largeIcon: true, usePrimaryColor: true))
                   ],
                 ),
                 SizedBox(height: 10),

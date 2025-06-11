@@ -118,10 +118,11 @@ class DownloadButton extends StatelessWidget
 
 class PlayButton extends StatelessWidget
 {
-  const PlayButton({super.key, required this.episode, required this.largeIcon});
+  const PlayButton({super.key, required this.episode, required this.largeIcon, required this.usePrimaryColor});
 
   final Episode episode;
   final bool largeIcon;
+  final bool usePrimaryColor;
 
   //*******************************************************
 
@@ -172,7 +173,7 @@ class PlayButton extends StatelessWidget
     {
       // it's playing
       return IconButton(
-        icon: Icon(Icons.pause),
+        icon: Icon(Icons.pause, color: usePrimaryColor ? Theme.of(context).colorScheme.primary : null),
         iconSize: largeIcon ? 60 : null,
         onPressed: () => _onPauseEpisode(dataModel),
       );
@@ -181,7 +182,7 @@ class PlayButton extends StatelessWidget
     {
       // we have the file downloaded but it's not playing right now
       return IconButton(
-        icon: Icon(Icons.play_arrow),
+        icon: Icon(Icons.play_arrow, color: usePrimaryColor ? Theme.of(context).colorScheme.primary : null),
         iconSize: largeIcon ? 60 : null,
         onPressed: () => _onPlayEpisode(dataModel)
       );
@@ -198,10 +199,6 @@ class RewindButton extends StatelessWidget
   const RewindButton({super.key, required this.episode});
 
   final Episode episode;
-
-  //*******************************************************
-
-  // TODO: draw circular arrow around each button? this would probably require CustomPaint
 
   //*******************************************************
 
@@ -224,10 +221,12 @@ class RewindButton extends StatelessWidget
   Widget build(BuildContext context)
   {
     DataModel dataModel = context.watch<DataModel>();
+    final color = Theme.of(context).colorScheme.primary;
 
-    return TextButton(
-      onPressed: episode.isPlaying ? () => _onSeek(dataModel) : null, 
-      child: Text("-10", style: TextStyle(fontSize: 28))
+    return InkWell(
+      borderRadius: BorderRadius.circular(50),
+      onTap: episode.isPlaying ? () => _onSeek(dataModel) : null, 
+      child: CustomPaint(painter: ArcPainter(forward: false, enabled: episode.isPlaying, color: color))
     );
   }
   
@@ -268,13 +267,74 @@ class FastForwardButton extends StatelessWidget
   Widget build(BuildContext context)
   {
     DataModel dataModel = context.watch<DataModel>();
+    final color = Theme.of(context).colorScheme.primary;
 
-    return TextButton(
-      onPressed: episode.isPlaying ? () => _onSeek(dataModel) : null, 
-      child: Text("+30", style: TextStyle(fontSize: 28))
+    return InkWell(
+      borderRadius: BorderRadius.circular(50),
+      onTap: episode.isPlaying ? () => _onSeek(dataModel) : null, 
+      child: CustomPaint(painter: ArcPainter(forward: true, enabled: episode.isPlaying, color: color))
     );
   }
+}
+
+//*************************************************************************************************
+//*************************************************************************************************
+//*************************************************************************************************
+
+class ArcPainter extends CustomPainter
+{
+  ArcPainter({required this.forward, required this.enabled, required this.color});
+
+  final bool forward;
+  final bool enabled;
+  final Color color;
   
+  @override
+  void paint(Canvas canvas, Size size)
+  {
+    //canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), Paint()..color = Colors.white);
+    final rect = Rect.fromLTWH(15, 15, size.width-30, size.height-30);
+    double startAngle = forward ? 0 : math.pi;
+    double sweepAngle = forward ? (3 * math.pi / 2) : (-3 * math.pi / 2);
+    final paint = Paint()
+      ..color = enabled ? color : Colors.grey
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6;
+
+    canvas.drawArc(rect, startAngle, sweepAngle, false, paint);
+    
+    // Draw the arrow at the end of the arc
+    final arrowAngle = forward ? 0 : math.pi;
+    const arrowSize = 13.0;
+    final arrowX = size.width / 2 + (forward ? 4 : -4);
+    final arrowY = 15;
+
+    final arrowPath = Path();
+    arrowPath.moveTo(arrowX + arrowSize * math.cos(arrowAngle), arrowY + arrowSize * math.sin(arrowAngle));
+    arrowPath.lineTo(arrowX + arrowSize * math.cos(arrowAngle + 2 * math.pi / 3), arrowY + arrowSize * math.sin(arrowAngle + 2 * math.pi / 3));
+    arrowPath.lineTo(arrowX + arrowSize * math.cos(arrowAngle - 2 * math.pi / 3), arrowY + arrowSize * math.sin(arrowAngle - 2 * math.pi / 3));
+    arrowPath.close();
+    canvas.drawPath(arrowPath, paint..style = PaintingStyle.fill);
+
+    // draw the text in the middle
+    String text = forward ? "30" : "10";
+    final textPainter = 
+      TextPainter(
+        text: TextSpan(text: text, style: TextStyle(color: enabled ? color : Colors.grey, fontSize: 28.0)), 
+        textDirection: TextDirection.ltr);
+    textPainter.layout(minWidth: 0, maxWidth: size.width);
+
+    final textX = size.width / 2 - textPainter.width / 2;
+    final textY = size.height / 2 - textPainter.height / 2;
+
+    textPainter.paint(canvas, Offset(textX, textY));
+  }
+
+  @override
+  bool shouldRepaint(ArcPainter oldDelegate)
+  {
+    return enabled != oldDelegate.enabled;
+  }
 }
 
 //*************************************************************************************************
@@ -304,7 +364,7 @@ class MiniPlayer extends StatelessWidget
             Expanded(child: 
               Text(episode.title, maxLines: 2, overflow: TextOverflow.fade, style: TextStyle(fontWeight: FontWeight.bold))
             ),
-            PlayButton(episode: episode, largeIcon: false)
+            PlayButton(episode: episode, largeIcon: false, usePrimaryColor: false)
         ]),
       ),
     );

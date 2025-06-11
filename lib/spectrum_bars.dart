@@ -65,7 +65,7 @@ class _SpectrumBarsState extends State<SpectrumBars>
   {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final backgroundColor = colorScheme.inversePrimary;
+    final backgroundColor = colorScheme.surface;
     final foregroundColor = colorScheme.primary;
 
     return CustomPaint(

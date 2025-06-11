@@ -160,7 +160,7 @@ class EpisodePreview extends StatelessWidget
                   FittedBox(child: SizedBox(width: 30, height: 20, child: SpectrumBars())),
                 Spacer(),
                 DownloadButton(episode: episode, largeIcon: false),
-                PlayButton(episode: episode, largeIcon: false)
+                PlayButton(episode: episode, largeIcon: false, usePrimaryColor: true)
               ]
             )
           ],
