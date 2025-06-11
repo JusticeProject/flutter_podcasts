@@ -7,10 +7,60 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:audio_service/audio_service.dart';
 
 import 'data_structures.dart';
 import 'utilities.dart';
 import 'xml_reader.dart';
+
+//*************************************************************************************************
+
+class LockScreenInterface extends BaseAudioHandler with SeekHandler
+{
+  LockScreenInterface(this.dataModel);
+
+  final DataModel dataModel;
+  
+  @override
+  Future<void> play() async
+  {
+    // TODO: try/catch
+    // TODO: podcast complete event
+    Episode? episode = dataModel.currentEpisode;
+    if (episode != null && !episode.isPlaying)
+    {
+      await dataModel.playEpisode(episode);
+    }
+    
+    // TODO: show albumArt:
+    //mediaItem.add(event)
+
+    // TODO: show buttons on lock screen 
+    // https://pub.dev/packages/audio_service
+    playbackState.add(PlaybackState(
+      controls: [MediaControl.pause],
+      playing: true
+    ));
+  }
+
+  @override
+  Future<void> pause() async
+  {
+    Episode? episode = dataModel.currentEpisode;
+    if (episode != null && episode.isPlaying)
+    {
+      await dataModel.pauseEpisode(episode);
+    }
+
+    playbackState.add(PlaybackState(
+      controls: [MediaControl.play],
+      playing: false
+    ));
+  }
+  
+  //@override
+  //Future<void> seek(Duration position) => _player.seek(position);
+}
 
 //*************************************************************************************************
 
@@ -43,19 +93,40 @@ class DataModel extends ChangeNotifier
   StreamSubscription<Duration>? _playbackPositionSubscription;
   StreamSubscription<void>? _playbackCompleteSubscription;
 
+  late LockScreenInterface _lockScreenInterface;
+
   //*********************************************
 
   // Constructor
   DataModel()
   {
-    _loadAllFeedsFromDisk().catchError(
-      (err)
-      {
-        logDebugMsg("failed initial load of feeds");
-        _failedToLoad = true;
-        showMessageToUser(err.toString());
-      }
-    );
+    // the constructor won't want for initialize to complete, but inside initialize it does wait
+    initialize();
+  }
+
+  //*********************************************
+
+  Future<void> initialize() async
+  {
+    try
+    {
+      await _loadAllFeedsFromDisk();
+
+      // TODO: what about cleaning up any resources? https://github.com/ryanheise/audio_service/wiki/Tutorial
+      _lockScreenInterface = await AudioService.init(
+        builder: () => LockScreenInterface(this),
+        config: AudioServiceConfig(
+          androidNotificationChannelId: 'com.oarworks.flutter_podcasts.channel.audio',
+          androidNotificationChannelName: 'Music playback',
+        ),
+      );
+    }
+    catch (err)
+    {
+      logDebugMsg("failed initial load of feeds");
+      _failedToLoad = true;
+      showMessageToUser(err.toString());
+    }
   }
 
   //*********************************************
