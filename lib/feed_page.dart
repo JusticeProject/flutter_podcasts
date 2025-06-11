@@ -151,9 +151,9 @@ class EpisodePreview extends StatelessWidget
                 // If the date says 1 hour ago then wait 10 hours... it will still say 1 hour ago. That's ok, it will update
                 // when the user refreshes or the app/FeedPage reloads.
                 Text(dateTimeUTCToPrettyPrint(episode.datePublishedUTC)),
-                SizedBox(width: 8),
+                SizedBox(width: 6),
                 Icon(Icons.circle, size: 5),
-                SizedBox(width: 8),
+                SizedBox(width: 6),
                 EpisodeStatus(episode: episode), // played vs unplayed vs how much time left
                 Spacer(),
                 FittedBox(
