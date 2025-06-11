@@ -70,7 +70,7 @@ class DownloadButton extends StatelessWidget
     {
       // show download progress
       return IconButton(
-        icon: CircularProgressIndicator(value: episode.downloadProgress),
+        icon: CircularProgressIndicator(value: episode.downloadProgress, backgroundColor: Colors.grey),
         iconSize: largeIcon ? 60 : null,
         constraints: largeIcon ? null : BoxConstraints(minWidth: 40, minHeight: 40, maxWidth: 40, maxHeight: 40),
         onPressed: () {}

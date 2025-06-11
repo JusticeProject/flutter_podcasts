@@ -168,7 +168,7 @@ class EpisodePreview extends StatelessWidget
                     }
                   })
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 12),
                 DownloadButton(episode: episode, largeIcon: false),
                 PlayButton(episode: episode, largeIcon: false, usePrimaryColor: true)
               ]

@@ -222,7 +222,7 @@ class _AudioProgressBarState extends State<AudioProgressBar>
       children: [
         Slider(
           activeColor: colorScheme.primary,
-          secondaryActiveColor: Colors.grey,
+          secondaryActiveColor: Colors.white,
           secondaryTrackValue: 1.0,
           min: 0.0, 
           max: 1.0, 
