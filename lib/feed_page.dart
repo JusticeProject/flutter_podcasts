@@ -125,8 +125,11 @@ class EpisodePreview extends StatelessWidget
   @override
   Widget build(BuildContext context)
   {
-    //DataModel dataModel = Provider.of<DataModel>(context, listen: false);
-    context.watch<DataModel>();
+    // TODO: check all Consumer<DataModel> and
+    // DataModel dataModel = Provider.of<DataModel>(context, listen: false); and
+    // context.watch<DataModel>();
+    // to make sure they are needed. Move them to child Widgets if possible - we don't want to rebuild large portions
+    // of the UI if we don't have to.
 
     return Container(
       padding: EdgeInsets.fromLTRB(15, 0, 15, 0),
@@ -151,14 +154,21 @@ class EpisodePreview extends StatelessWidget
                 SizedBox(width: 8),
                 Icon(Icons.circle, size: 5),
                 SizedBox(width: 8),
-                const Text("unplayed"), 
-                // TODO: played vs 40 min vs 38 min left + progress bar, may have to keep it as unplayed until the first time we
-                // play the file and AudioPlayer gives us the length, the XML file won't be reliable for giving us the length because
-                // the CDN can insert ads of different lengths
-                SizedBox(width: 8),
-                if (episode.isPlaying)
-                  FittedBox(child: SizedBox(width: 30, height: 20, child: SpectrumBars())),
+                EpisodeStatus(episode: episode), // played vs unplayed vs how much time left
                 Spacer(),
+                FittedBox(
+                  child: Consumer<DataModel>(builder: (context, value, child) {
+                    if (episode.isPlaying)
+                    {
+                      return SizedBox(width: 30, height: 20, child: SpectrumBars());
+                    }
+                    else
+                    {
+                      return SizedBox.shrink();
+                    }
+                  })
+                ),
+                SizedBox(width: 8),
                 DownloadButton(episode: episode, largeIcon: false),
                 PlayButton(episode: episode, largeIcon: false, usePrimaryColor: true)
               ]
@@ -167,5 +177,39 @@ class EpisodePreview extends StatelessWidget
         ),
       ),
     );
+  }
+}
+
+//*************************************************************************************************
+//*************************************************************************************************
+//*************************************************************************************************
+
+class EpisodeStatus extends StatelessWidget
+{
+  const EpisodeStatus({super.key, required this.episode});
+
+  final Episode episode;
+
+  @override
+  Widget build(BuildContext context)
+  {
+    context.watch<DataModel>();
+
+    if (episode.playbackPosition.inSeconds > 0 && episode.playLength != null)
+    {
+      // TODO: add a small progress bar after the text?
+      String result = playbackDurationPrettyPrint(episode.playLength, episode.playbackPosition, false);
+      return Text(result);
+    }
+    else if (episode.played)
+    {
+      return const Text("Played", style: TextStyle(color: Colors.red));
+    }
+    else
+    {
+      // need to keep it as unplayed until the first time we play the file and AudioPlayer gives us the length, 
+      // the XML file won't be reliable for giving us the length because the CDN can insert ads of different lengths
+      return const Text("Unplayed");
+    }
   }
 }

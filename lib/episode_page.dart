@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -159,10 +161,16 @@ class _AudioProgressBarState extends State<AudioProgressBar>
     //logDebugMsg("onChangeEnd");
     _scrubbing = false;
 
-    Duration newPosition = sliderValueToDuration(userFingerPosition, widget.episode.playLength);
+    // first convert the slider to a usable timestamp
+    Duration desiredPosition = sliderValueToDuration(userFingerPosition, widget.episode.playLength);
+
+    // make sure we don't go past the end of the file, we'll go up to 500ms before the end
+    int lengthMilliseconds = widget.episode.playLength?.inMilliseconds ?? 0;
+    int newMilliseconds = math.min(desiredPosition.inMilliseconds, lengthMilliseconds - 500);
+
     try
     {
-      await dataModel.seekEpisode(widget.episode, newPosition);
+      await dataModel.seekEpisode(widget.episode, Duration(milliseconds: newMilliseconds));
     }
     catch (err)
     {
@@ -232,11 +240,11 @@ class _AudioProgressBarState extends State<AudioProgressBar>
           children: [
             Text(playbackDurationPrettyPrint(
               _scrubbing ? sliderValueToDuration(_sliderPosition, widget.episode.playLength) : widget.episode.playbackPosition, 
-              null)
+              null, true)
             ),
             Text(playbackDurationPrettyPrint(
               widget.episode.playLength, 
-              _scrubbing ? sliderValueToDuration(_sliderPosition, widget.episode.playLength) : widget.episode.playbackPosition)
+              _scrubbing ? sliderValueToDuration(_sliderPosition, widget.episode.playLength) : widget.episode.playbackPosition, true)
             )
           ]
         )
@@ -249,14 +257,15 @@ class _AudioProgressBarState extends State<AudioProgressBar>
 //*************************************************************************************************
 //*************************************************************************************************
 
-String playbackDurationPrettyPrint(Duration? dur, Duration? toSubtract)
+String playbackDurationPrettyPrint(Duration? dur, Duration? toSubtract, bool includeSeconds)
 {
   if (dur == null)
   {
     return "";
   }
 
-  Duration actualDur = Duration(seconds: dur.inSeconds);
+  // first copy to a new one so we don't change the real one, use microseconds so we don't truncate anything
+  Duration actualDur = Duration(microseconds: dur.inMicroseconds);
   if (toSubtract != null)
   {
     actualDur = actualDur - toSubtract;
@@ -264,7 +273,23 @@ String playbackDurationPrettyPrint(Duration? dur, Duration? toSubtract)
 
   int hours = actualDur.inHours;
   int minutes = actualDur.inMinutes - hours * 60;
-  int seconds = actualDur.inSeconds - hours * 3600 - minutes * 60;
 
-  return "${hours.toString()}:${minutes.toString().padLeft(2, "0")}:${seconds.toString().padLeft(2, "0")}";
+  if (includeSeconds)
+  {
+    // example: 1:45:01
+    int seconds = actualDur.inSeconds - hours * 3600 - minutes * 60;
+    return "${hours.toString()}:${minutes.toString().padLeft(2, "0")}:${seconds.toString().padLeft(2, "0")}";
+  }
+  else
+  {
+    // example: 1 hr 45 mins left
+    if (hours > 0)
+    {
+      return ("$hours hr${hours == 1 ? "" : "s"} $minutes min${minutes == 1 ? "" : "s"} left");
+    }
+    else
+    {
+      return ("$minutes min${minutes == 1 ? "" : "s"} left");
+    }
+  }
 }

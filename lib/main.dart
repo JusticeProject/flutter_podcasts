@@ -239,6 +239,7 @@ class _LibraryPageState extends State<LibraryPage>
     // for dark theme the colors are:
     // primary = purple
     // inversePrimary = black
+    // surface = black-ish but not pure black, it's the normal background color
     // onPrimary = black
 
     //var dataModel = context.watch<DataModel>();

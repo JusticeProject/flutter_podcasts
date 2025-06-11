@@ -50,18 +50,24 @@ class Episode
   bool isPlaying = false;
   bool played = false;
   // TODO: need to save the positions/played for each file to disk if the duration is > 0, when loading check to see if the positions file has
-  // the guid/filename, save to disk in DataModel's destructor?
+  // the guid/filename, save to disk in DataModel's destructor? don't save to Feed's config file
   // https://api.flutter.dev/flutter/widgets/RestorationMixin-mixin.html
   // https://docs.flutter.dev/platform-integration/android/restore-state-android
-  // try didChangeAppLifecycleState in WidgetsBindingObserver class
+  // try didChangeAppLifecycleState in WidgetsBindingObserver class:
   //
   // class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   //
   // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   // or if the app state changes to detached
   //   if (state == AppLifecycleState.detached) {
   //     _saveDataToFile();
   //   }
   // }
+  //
+  // could also shared shared_preferences: https://docs.flutter.dev/cookbook/persistence/key-value
+  // when is it written to disk?
+  // need to handle all Episodes for all Feeds, for each pause/complete event?
+  // need to remove keys which might be complex
 
   Duration playbackPosition = Duration();
   Duration? playLength;
