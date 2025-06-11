@@ -293,11 +293,12 @@ class ArcPainter extends CustomPainter
   void paint(Canvas canvas, Size size)
   {
     //canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), Paint()..color = Colors.white);
+    Color disabledColor = Color.fromARGB(255, 109, 109, 109);
     final rect = Rect.fromLTWH(15, 15, size.width-30, size.height-30);
     double startAngle = forward ? 0 : math.pi;
     double sweepAngle = forward ? (3 * math.pi / 2) : (-3 * math.pi / 2);
     final paint = Paint()
-      ..color = enabled ? color : Colors.grey
+      ..color = enabled ? color : disabledColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6;
 
@@ -320,7 +321,7 @@ class ArcPainter extends CustomPainter
     String text = forward ? "30" : "10";
     final textPainter = 
       TextPainter(
-        text: TextSpan(text: text, style: TextStyle(color: enabled ? color : Colors.grey, fontSize: 28.0)), 
+        text: TextSpan(text: text, style: TextStyle(color: enabled ? color : disabledColor, fontSize: 28.0)), 
         textDirection: TextDirection.ltr);
     textPainter.layout(minWidth: 0, maxWidth: size.width);
 
