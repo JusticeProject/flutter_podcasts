@@ -153,7 +153,14 @@ class _LibraryPageState extends State<LibraryPage>
 
       for (String url in urls)
       {
-        await dataModel.addFeed(url);
+        try
+        {
+          await dataModel.addFeed(url);
+        }
+        catch (err)
+        {
+          dataModel.showMessageToUser(err.toString());
+        }
       }
     }
   }
