@@ -95,7 +95,7 @@ class SpectrumBarsPainter extends CustomPainter
     final foregroundPaint = Paint()..color = foregroundColor;
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), backgroundPaint);
 
-    final double fixedPortionOfHeight = 5;
+    final double fixedPortionOfHeight = 8;
     final double variablePortionOfHeight = size.height - fixedPortionOfHeight;
 
     double bassY = size.height - fixedPortionOfHeight - variablePortionOfHeight * math.sin(progress).abs();

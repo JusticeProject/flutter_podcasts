@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data_structures.dart';
 import 'utilities.dart';
@@ -43,19 +44,35 @@ class DataModel extends ChangeNotifier
   StreamSubscription<Duration>? _playbackPositionSubscription;
   StreamSubscription<void>? _playbackCompleteSubscription;
 
+  late SharedPreferencesWithCache _playbackPositionCache;
+
   //*********************************************
 
   // Constructor
   DataModel()
   {
-    _loadAllFeedsFromDisk().catchError(
-      (err)
-      {
-        logDebugMsg("failed initial load of feeds");
-        _failedToLoad = true;
-        showMessageToUser(err.toString());
-      }
-    );
+    // we won't wait in the constructor but inside the initialize function we will wait
+    initialize();
+  }
+
+  //*********************************************
+
+  Future<void> initialize() async
+  {
+    try
+    {
+      // I'm using SharedPreferencesWithCache instead of the Async version because I don't want to write to disk too often:
+      // "SharedPreferencesAsync does not utilize a local cache which causes all calls to be asynchronous calls to the 
+      // host platforms storage solution."
+      _playbackPositionCache = await SharedPreferencesWithCache.create(cacheOptions: const SharedPreferencesWithCacheOptions());
+      await _loadAllFeedsFromDisk();
+    }
+    catch (err)
+    {
+      logDebugMsg("failed initial load of feeds");
+      _failedToLoad = true;
+      showMessageToUser(err.toString());
+    }
   }
 
   //*********************************************
@@ -88,7 +105,7 @@ class DataModel extends ChangeNotifier
       String xmlFilename = combinePaths(localDir, "feed.xml");
       await saveToFileBytes(xmlFilename, rssBytes);
       
-      Feed feed = await _gatherFeedInfo(localDir, true);
+      Feed feed = await _gatherFeedInfo(localDir, true, false);
       _feedList.add(feed);
 
       FeedConfig config = FeedConfig(url, feed.datePublishedUTC);
@@ -132,6 +149,7 @@ class DataModel extends ChangeNotifier
       Feed feedToRemove = _feedList.removeAt(index);
       await Directory(feedToRemove.localDir).delete(recursive: true);
       notifyListeners();
+      removeSavedPlaybackPositions(feedToRemove);
     }
     catch (err)
     {
@@ -247,7 +265,7 @@ class DataModel extends ChangeNotifier
   //*********************************************
   //*********************************************
 
-  Future<Feed> _gatherFeedInfo(String localDir, bool downloadAlbumArt) async
+  Future<Feed> _gatherFeedInfo(String localDir, bool downloadAlbumArt, bool updatePlaybackPositions) async
   {
     String feedNumberString = getFileNameFromPath(localDir);
     int feedNumberInt = int.parse(feedNumberString);
@@ -285,6 +303,12 @@ class DataModel extends ChangeNotifier
       }
     }
 
+    // update the playback positions for each episode that were stored in the cache
+    if (updatePlaybackPositions)
+    {
+      await loadPlaybackPositions(feed);
+    }
+
     return feed;
   }
 
@@ -292,7 +316,7 @@ class DataModel extends ChangeNotifier
 
   Future<void> _loadAllFeedsFromDisk() async
   {
-    // first time loading the list will be empty
+    // when the apps starts (whether it's the first time or millionth time) the feed list will be empty
     if (_feedList.isEmpty)
     {
       var path = await getLocalPath();
@@ -315,7 +339,7 @@ class DataModel extends ChangeNotifier
             }
             else
             {
-              Feed feed = await _gatherFeedInfo(item.path, false);
+              Feed feed = await _gatherFeedInfo(item.path, false, true);
               _feedList.add(feed);
             }
           }
@@ -342,6 +366,7 @@ class DataModel extends ChangeNotifier
     }
     else
     {
+      // we are *re*loading
       for (int i = 0; i < _feedList.length; i++)
       {
         // we should only reload a feed if it isn't playing
@@ -351,9 +376,8 @@ class DataModel extends ChangeNotifier
         }
         else
         {
-          // TODO: use the old Feed to copy information to the new Feed object, like each Episode's playbackPosition/played information
-          // A helper function could be used for that: copyPlaybackInfo, will need to see that the Episode's guid matches before each copy.
-          _feedList[i] = await _gatherFeedInfo(_feedList[i].localDir, false);
+          // load the feed 
+          _feedList[i] = await _gatherFeedInfo(_feedList[i].localDir, false, true);
         }
       }
     }
@@ -376,6 +400,99 @@ class DataModel extends ChangeNotifier
     String data = await readFileString(localDir);
     FeedConfig config = FeedConfig.fromExisting(data);
     return config;
+  }
+
+  //*********************************************
+
+  // alternative option for saving playbackPositions:
+  // https://api.flutter.dev/flutter/widgets/RestorationMixin-mixin.html
+  // https://docs.flutter.dev/platform-integration/android/restore-state-android
+  // try didChangeAppLifecycleState in WidgetsBindingObserver class:
+  //
+  // class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
+  //
+  // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   // or if the app state changes to detached
+  //   if (state == AppLifecycleState.detached) {
+  //     _saveDataToFile();
+  //   }
+  // }
+  //
+
+  // TODO: need to save the guid / filename of _currentEpisode
+
+  // TODO: when should I save the playback positions? whenever an episode is paused or complete? or before reloading a feed? 
+  // or during DataModel's destructor/dispose?
+  Future<void> savePlaybackPositions(Feed feed) async
+  {
+    // https://docs.flutter.dev/cookbook/persistence/key-value
+
+    String key = feed.feedNumber.toString();
+
+    List<String> values = [];
+    for (Episode episode in feed.episodes)
+    {
+      if (episode.playbackPosition.inMicroseconds > 0 || episode.played)
+      {
+        // format is:
+        // guid,seconds played,total seconds in file,played
+        String value = 
+          "${episode.guid},${episode.playbackPosition.inSeconds},${episode.playLength?.inSeconds ?? 0},${episode.played ? "1" : "0"}";
+        values.add(value);
+      }
+    }
+
+    await _playbackPositionCache.setStringList(key, values);
+  }
+
+  //*********************************************
+
+  Future<void> loadPlaybackPositions(Feed feed) async
+  {
+    String key = feed.feedNumber.toString();
+
+    try
+    {
+      List<String>? values = _playbackPositionCache.getStringList(key);
+      if (values != null)
+      {
+        for (String value in values)
+        {
+          List<String> valueSplit = value.split(",");
+          String guid = valueSplit[0];
+          Duration playbackPosition = Duration(seconds: int.parse(valueSplit[1]));
+          int lengthSeconds = int.parse(valueSplit[2]);
+          Duration? playLength = (lengthSeconds == 0) ? null : Duration(seconds: lengthSeconds);
+          bool played = valueSplit[3] == "1" ? true : false;
+
+          for (Episode episode in feed.episodes)
+          {
+            if (episode.guid == guid)
+            {
+              episode.playbackPosition = playbackPosition;
+              episode.playLength = playLength;
+              episode.played = played;
+              break;
+            }
+          }
+        }
+      }
+    }
+    catch (err)
+    {
+      logDebugMsg(err.toString());
+    }
+  }
+
+  //*********************************************
+
+  Future<void> removeSavedPlaybackPositions(Feed feed) async
+  {
+    String key = feed.feedNumber.toString();
+    if (_playbackPositionCache.containsKey(key))
+    {
+      await _playbackPositionCache.remove(key);
+    }
   }
 
   //*********************************************
@@ -587,11 +704,13 @@ class DataModel extends ChangeNotifier
       await _playbackPositionSubscription?.cancel();
       logDebugMsg("playback complete");
       episode.isPlaying = false;
-      _getFeedOfEpisode(episode).isPlaying = false;
+      Feed feed = _getFeedOfEpisode(episode);
+      feed.isPlaying = false;
       episode.played = true;
       episode.playbackPosition = Duration(); // if we play the Episode again it will start at the beginning
       _currentEpisode = null;
       notifyListeners();
+      await savePlaybackPositions(feed);
     }
 
     // AudioPlayer API usage:
@@ -622,7 +741,8 @@ class DataModel extends ChangeNotifier
   Future<void> pauseEpisode(Episode episode) async
   {
     episode.isPlaying = false;
-    _getFeedOfEpisode(episode).isPlaying = false;
+    Feed feed = _getFeedOfEpisode(episode);
+    feed.isPlaying = false;
 
     // The order seems critical here:
     // pause the audio player, the position updates should stop arriving soon,
@@ -634,6 +754,8 @@ class DataModel extends ChangeNotifier
 
     logDebugMsg("${episode.title} paused at ${episode.playbackPosition}");
     notifyListeners();
+
+    await savePlaybackPositions(feed);
   }
 
   //*********************************************

@@ -197,7 +197,6 @@ class EpisodeStatus extends StatelessWidget
 
     if (episode.playbackPosition.inSeconds > 0 && episode.playLength != null)
     {
-      // TODO: add a small progress bar after the text?
       String result = playbackDurationPrettyPrint(episode.playLength, episode.playbackPosition, false);
       return Text(result);
     }
