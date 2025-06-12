@@ -221,15 +221,16 @@ class RewindButton extends StatelessWidget
   Widget build(BuildContext context)
   {
     DataModel dataModel = context.watch<DataModel>();
-    final color = Theme.of(context).colorScheme.primary;
+    final enabledColor = Theme.of(context).colorScheme.primary;
+    final disabledColor = Theme.of(context).disabledColor;
 
     return InkWell(
       borderRadius: BorderRadius.circular(50),
       onTap: episode.isPlaying ? () => _onSeek(dataModel) : null, 
-      child: CustomPaint(painter: ArcPainter(forward: false, enabled: episode.isPlaying, color: color))
+      child: CustomPaint(
+        painter: ArcPainter(forward: false, enabled: episode.isPlaying, enabledColor: enabledColor, disabledColor: disabledColor))
     );
   }
-  
 }
 
 //*************************************************************************************************
@@ -267,12 +268,14 @@ class FastForwardButton extends StatelessWidget
   Widget build(BuildContext context)
   {
     DataModel dataModel = context.watch<DataModel>();
-    final color = Theme.of(context).colorScheme.primary;
+    final enabledColor = Theme.of(context).colorScheme.primary;
+    final disabledColor = Theme.of(context).disabledColor;
 
     return InkWell(
       borderRadius: BorderRadius.circular(50),
       onTap: episode.isPlaying ? () => _onSeek(dataModel) : null, 
-      child: CustomPaint(painter: ArcPainter(forward: true, enabled: episode.isPlaying, color: color))
+      child: CustomPaint(
+        painter: ArcPainter(forward: true, enabled: episode.isPlaying, enabledColor: enabledColor, disabledColor: disabledColor))
     );
   }
 }
@@ -283,22 +286,22 @@ class FastForwardButton extends StatelessWidget
 
 class ArcPainter extends CustomPainter
 {
-  ArcPainter({required this.forward, required this.enabled, required this.color});
+  ArcPainter({required this.forward, required this.enabled, required this.enabledColor, required this.disabledColor});
 
   final bool forward;
   final bool enabled;
-  final Color color;
+  final Color enabledColor;
+  final Color disabledColor;
   
   @override
   void paint(Canvas canvas, Size size)
   {
     //canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), Paint()..color = Colors.white);
-    Color disabledColor = Color.fromARGB(255, 109, 109, 109);
     final rect = Rect.fromLTWH(15, 15, size.width-30, size.height-30);
     double startAngle = forward ? 0 : math.pi;
     double sweepAngle = forward ? (3 * math.pi / 2) : (-3 * math.pi / 2);
     final paint = Paint()
-      ..color = enabled ? color : disabledColor
+      ..color = enabled ? enabledColor : disabledColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6;
 
@@ -307,7 +310,7 @@ class ArcPainter extends CustomPainter
     // Draw the arrow at the end of the arc
     final arrowAngle = forward ? 0 : math.pi;
     const arrowSize = 13.0;
-    final arrowX = size.width / 2 + (forward ? 4 : -4);
+    final arrowX = size.width / 2 + (forward ? 6 : -6);
     final arrowY = 15;
 
     final arrowPath = Path();
@@ -321,7 +324,7 @@ class ArcPainter extends CustomPainter
     String text = forward ? "30" : "10";
     final textPainter = 
       TextPainter(
-        text: TextSpan(text: text, style: TextStyle(color: enabled ? color : disabledColor, fontSize: 28.0)), 
+        text: TextSpan(text: text, style: TextStyle(color: enabled ? enabledColor : disabledColor, fontSize: 28.0)), 
         textDirection: TextDirection.ltr);
     textPainter.layout(minWidth: 0, maxWidth: size.width);
 
