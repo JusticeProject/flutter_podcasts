@@ -94,12 +94,12 @@ class _LibraryPageState extends State<LibraryPage>
 
   @override
   void initState() {
+    super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScrollPositionChanged);
     _feedList = [];
     _tapCount = 0;
     _lastTapTime = DateTime.now();
-    super.initState();
   }
 
   //*******************************************************

@@ -310,7 +310,7 @@ class ArcPainter extends CustomPainter
     // Draw the arrow at the end of the arc
     final arrowAngle = forward ? 0 : math.pi;
     const arrowSize = 13.0;
-    final arrowX = size.width / 2 + (forward ? 6 : -6);
+    final arrowX = size.width / 2 + (forward ? 6.5 : -6.5);
     final arrowY = 15;
 
     final arrowPath = Path();

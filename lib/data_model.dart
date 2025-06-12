@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -15,7 +16,8 @@ import 'xml_reader.dart';
 
 //*************************************************************************************************
 
-class DataModel extends ChangeNotifier
+// WidgetsBindingObserver gives didChangeAppLifecycleState and didRequestAppExit
+class DataModel extends ChangeNotifier with WidgetsBindingObserver
 {
   // Keeps track of what feedNumber to use next when adding a new podcast feed. Each podcast is stored in its own
   // directory, with the directory name being "0" or "5" which corresponds to its feedNumber;
@@ -51,11 +53,60 @@ class DataModel extends ChangeNotifier
   // Constructor
   DataModel()
   {
+    WidgetsBinding.instance.addObserver(this);
     // we won't wait in the constructor but inside the initialize function we will wait
     initialize();
   }
 
   //*********************************************
+
+  // "Destructor"
+  @override
+  void dispose()
+  {
+    // saving playback info in dispose didn't seem to work
+
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  //*********************************************
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async
+  {
+    // see https://api.flutter.dev/flutter/widgets/WidgetsBindingObserver-class.html
+    logDebugMsg("state change: $state");
+    
+    // the paused state happens way too often, even when the podcast is still playing,
+    // when going from the app to the home screen: inactive -> hidden -> paused
+    // when coming back to the app: hidden -> inactive -> resumed
+    // saving playback positions if the app state changes to detached didn't seem to work
+    /*if (state == AppLifecycleState.detached)
+    {
+      for (Feed feed in _feedList)
+      {
+        try
+        {
+          await savePlaybackPositions(feed);
+        }
+        catch (err)
+        {
+          logDebugMsg(err.toString());
+        }
+      }
+    }*/
+  }
+
+  @override
+  Future<AppExitResponse> didRequestAppExit() async
+  {
+    // function wasn't called on Android
+    logDebugMsg("!! Exiting !!");
+    return super.didRequestAppExit();
+  }
+
+  //*******************************************************
 
   Future<void> initialize() async
   {
@@ -407,22 +458,11 @@ class DataModel extends ChangeNotifier
   // alternative option for saving playbackPositions:
   // https://api.flutter.dev/flutter/widgets/RestorationMixin-mixin.html
   // https://docs.flutter.dev/platform-integration/android/restore-state-android
-  // try didChangeAppLifecycleState in WidgetsBindingObserver class:
-  //
-  // class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
-  //
-  // void didChangeAppLifecycleState(AppLifecycleState state) {
-  //   // or if the app state changes to detached
-  //   if (state == AppLifecycleState.detached) {
-  //     _saveDataToFile();
-  //   }
-  // }
-  //
 
-  // TODO: need to save the guid / filename of _currentEpisode
+  // TODO: need to save the guid / filename of _currentEpisode, only if it has changed
 
   // TODO: when should I save the playback positions? whenever an episode is paused or complete? or before reloading a feed? 
-  // or during DataModel's destructor/dispose?
+  // or during DataModel's destructor/dispose? or when the state changes to detached?
   Future<void> savePlaybackPositions(Feed feed) async
   {
     // https://docs.flutter.dev/cookbook/persistence/key-value
@@ -442,7 +482,10 @@ class DataModel extends ChangeNotifier
       }
     }
 
-    await _playbackPositionCache.setStringList(key, values);
+    if (values.isNotEmpty)
+    {
+      await _playbackPositionCache.setStringList(key, values);
+    }
   }
 
   //*********************************************
@@ -456,6 +499,7 @@ class DataModel extends ChangeNotifier
       List<String>? values = _playbackPositionCache.getStringList(key);
       if (values != null)
       {
+        logDebugMsg("found playback info for ${feed.title}");
         for (String value in values)
         {
           List<String> valueSplit = value.split(",");
