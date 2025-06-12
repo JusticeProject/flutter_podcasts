@@ -21,7 +21,6 @@ class FeedPage extends StatelessWidget
   {
     return SafeArea(
       child: Scaffold(
-        // TODO: how can I make the AppBar disappear when I scroll down the page?
         appBar: AppBar(
           leading: IconButton(
             onPressed: () => Navigator.pop(context),

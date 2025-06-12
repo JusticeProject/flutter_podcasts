@@ -20,14 +20,6 @@ class EpisodePage extends StatelessWidget
 
   //*******************************************************
 
-  // another audio package, doesn't work on Windows
-  // https://pub.dev/packages/just_audio
-
-  // TODO: audio only, no video, how do I handle it if user enters rss feed that only has videos?
-
-  // TODO: audio player shows on lockscreen, stops playing when headphones removed, try this package
-  // https://pub.dev/packages/audio_service
-
   // When the user taps a link in the Episode description
   void _onLinkTapped(String? url) async
   {

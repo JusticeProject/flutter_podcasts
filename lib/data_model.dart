@@ -14,6 +14,9 @@ import 'data_structures.dart';
 import 'utilities.dart';
 import 'xml_reader.dart';
 
+// TODO: audio player shows on lockscreen, stops playing when headphones removed, try this package
+// https://pub.dev/packages/audio_service
+
 //*************************************************************************************************
 
 // WidgetsBindingObserver gives didChangeAppLifecycleState and didRequestAppExit
@@ -76,7 +79,7 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
   void didChangeAppLifecycleState(AppLifecycleState state) async
   {
     // see https://api.flutter.dev/flutter/widgets/WidgetsBindingObserver-class.html
-    logDebugMsg("state change: $state");
+    //logDebugMsg("state change: $state");
     
     // the paused state happens way too often, even when the podcast is still playing,
     // when going from the app to the home screen: inactive -> hidden -> paused
@@ -285,10 +288,6 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
   // return true if it was refreshed with new data, false otherwise
   Future<bool> _refreshFeed(Feed feed) async
   {
-    // TODO: what if I have the 10th episode downloaded then the feed updates so it's now the 11th episode? should I delete the 11th episode?
-    // use MAX_NUM_EPISODES
-    // also, what if they change an episode's guid thus it won't match the local filename?
-
     FeedConfig config = await loadFeedConfig(feed.localDir);
     Uint8List rssBytes = await _fetchRSS(config.url);
     String rssText = String.fromCharCodes(rssBytes);
@@ -354,6 +353,12 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
       }
     }
 
+    // assuming MAX_NUM_EPISODES = 10:
+    // If I have the 10th episode downloaded then the feed updates so it's now the 11th episode, need to delete the 11th
+    // episode because it won't be visible to the user anymore. We'll do this by deleting any episodes from the filesystem 
+    // that don't correspond to an Episode in the current Feed.
+    await _removeOldEpisodes(feed);
+
     // update the playback positions for each episode that were stored in the cache
     if (updatePlaybackPositions)
     {
@@ -361,6 +366,52 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
     }
 
     return feed;
+  }
+
+  //*********************************************
+
+  Future<void> _removeOldEpisodes(Feed feed) async
+  {
+    try
+    {
+      var itemStream = Directory(feed.localDir).list();
+      await for (var item in itemStream)
+      {
+        if (item is File && !item.path.endsWith(".jpg") && !item.path.endsWith(".txt") && !item.path.endsWith(".xml"))
+        {
+          // we found an episode file, now check if the filename matches a guid
+          String filename = getFileNameFromPath(item.path);
+          Episode? episode = _getEpisodeByGuid(feed.episodes, filename);
+          if (episode == null)
+          {
+            // no matching episode, delete the file
+            logDebugMsg("deleting outdated file $filename from feed ${feed.title}");
+            await File(item.path).delete();
+          }
+        }
+      }
+    }
+    catch (err)
+    {
+      logDebugMsg(err.toString());
+    }
+  }
+
+  //*********************************************
+
+  // if passing in a filename for guid then it shouldn't have any "/" characters or parent folders, just the name of the file
+  Episode? _getEpisodeByGuid(List<Episode> episodes, String guid)
+  {
+    // could maybe use episodes.firstWhere but this seems cleaner
+    for (Episode episode in episodes)
+    {
+      if (episode.guid == guid)
+      {
+        return episode;
+      }
+    }
+
+    return null;
   }
 
   //*********************************************
@@ -461,7 +512,10 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
 
   // TODO: need to save the guid / filename of _currentEpisode, only if it has changed
 
-  // TODO: when should I save the playback positions? whenever an episode is paused or complete? or before reloading a feed? 
+  // TODO: when should I save the playback positions? whenever an episode is paused or complete? (I could pass in a bool to pauseEpisode
+  // so it saves when you press the pause button but not when you press play when a different episode is already playing - it pauses the first
+  // episode before playing the second episode)
+  // or save playback position before reloading a feed? 
   // or during DataModel's destructor/dispose? or when the state changes to detached?
   Future<void> savePlaybackPositions(Feed feed) async
   {
@@ -509,15 +563,12 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
           Duration? playLength = (lengthSeconds == 0) ? null : Duration(seconds: lengthSeconds);
           bool played = valueSplit[3] == "1" ? true : false;
 
-          for (Episode episode in feed.episodes)
+          Episode? episode = _getEpisodeByGuid(feed.episodes, guid);
+          if (episode != null)
           {
-            if (episode.guid == guid)
-            {
-              episode.playbackPosition = playbackPosition;
-              episode.playLength = playLength;
-              episode.played = played;
-              break;
-            }
+            episode.playbackPosition = playbackPosition;
+            episode.playLength = playLength;
+            episode.played = played;
           }
         }
       }
@@ -760,6 +811,7 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
     // AudioPlayer API usage:
     // https://pub.dev/packages/audioplayers
     // https://github.com/bluefireteam/audioplayers/blob/main/getting_started.md
+    // alternative audio package, doesn't work on Windows: https://pub.dev/packages/just_audio
 
     logDebugMsg("${episode.title} will start at ${episode.playbackPosition}");
 
