@@ -175,6 +175,7 @@ String getGuidOfItem(XmlElement item)
   // <guid isPermaLink="false">https://pdst.fm/e/pscrb.fm/rss/p/cdn.twit.tv/audio/twig/twig0822/twig0822.mp3</guid>
   // <guid isPermaLink="false">aadf1025-c84e-4553-aaf0-034a21f73a21</guid>
   // <guid isPermaLink="false"><![CDATA[926dde42-3a2c-11ef-8844-a758818393e3]]></guid>
+  // <guid isPermaLink="false">rustacean-station/episode/accesskit-with-matt-campbell-and-arnold-loubriat/</guid>
 
   String innerText = guid.innerText;
   if (!innerText.contains("/"))
@@ -182,8 +183,19 @@ String getGuidOfItem(XmlElement item)
     return innerText;
   }
 
-  // from the example above this will produce twig0822.mp3
-  return innerText.substring(innerText.lastIndexOf("/") + 1);
+  if (innerText.endsWith("/"))
+  {
+    // From the example above this will produce accesskit-with-matt-campbell-and-arnold-loubriat
+    // I could probably use this method for the scenario below as well, but the below method is faster
+    // and uses less RAM.
+    List<String> innerTextSplit = innerText.split("/");
+    return innerTextSplit.lastWhere((element) => element.isNotEmpty, orElse: () => "");
+  }
+  else
+  {
+    // from the example above this will produce twig0822.mp3
+    return innerText.substring(innerText.lastIndexOf("/") + 1);
+  }
 }
 
 //*************************************************************************************************

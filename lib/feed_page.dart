@@ -98,7 +98,7 @@ class _CollapsibleTextState extends State<CollapsibleText>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text(widget.text, maxLines: _isExpanded ? null : 2, overflow: TextOverflow.fade, softWrap: true, textAlign: TextAlign.center),
+          Center(child: Text(widget.text, maxLines: _isExpanded ? null : 2, overflow: TextOverflow.fade, softWrap: true, textAlign: TextAlign.center)),
           if (!_isExpanded)
             const Text('...More', style: TextStyle(fontWeight: FontWeight.bold)),
           if (_isExpanded)
