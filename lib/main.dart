@@ -473,13 +473,13 @@ List<String> urls = [
 "https://feeds.twit.tv/sn.xml", // Security Now
 "https://feeds.twit.tv/twig.xml", // This Week in Google -> Intelligent Machines
 "https://feeds.twit.tv/uls.xml", // The Untitled Linux Show
-// FLOSS Weekly
+"https://feeds.libsyn.com/499093/rss", // FLOSS Weekly
 "https://feeds.simplecast.com/6WD3bDj7", // Triple Click
 "https://feeds.simplecast.com/JT6pbPkg", // Google DeepMind
 // Google AI Release Notes
 "https://makingembeddedsystems.libsyn.com/rss", // Embedded.fm
 "https://talkpython.fm/episodes/rss", // Talk Python to Me
-// Python Bytes
+"https://pythonbytes.fm/episodes/rss", // Python Bytes
 "https://feeds.simplecast.com/4T39_jAj", // StarTalk
 "https://pinecast.com/feed/the-minnmax-show", // The MinnMax Show
 "https://feeds.megaphone.fm/gamescoop", // Game Scoop!
@@ -491,20 +491,21 @@ List<String> urls = [
 "https://feeds.npr.org/510325/podcast.xml", // The Indicator (NPR)
 "https://feeds.simplecast.com/h18ZIZD_", // Science Friday
 // Stuff You Should Know
-// This American Life
+"https://www.thisamericanlife.org/podcast/rss.xml", // This American Life
+"https://feeds.megaphone.fm/search-engine", // Search Engine
 "https://feeds.megaphone.fm/kindafunnypodcast", // Kinda Funny Podcast
 "https://feeds.megaphone.fm/ROOSTER8838278962", // Kinda Funny Games Daily
-// Sacred Symbols (Playstation)
+"https://feeds.megaphone.fm/STU5682506591", // Sacred Symbols (Playstation)
 "https://feeds.libsyn.com/78795/rss", // Dev Game Club
-// 8-4 Play
-// Rust In Production
-// Rustacean Station
-// Fallthrough (Go)
-// Abroad in Japan
-// PowerUp / EETimes
+"https://eightfour.libsyn.com/rss", // 8-4 Play
+"https://letscast.fm/podcasts/rust-in-production-82281512/feed", // Rust In Production
+"https://rustacean-station.org/podcast.rss", // Rustacean Station
+"https://feeds.transistor.fm/fallthrough", // Fallthrough (Go)
+"https://feeds.acast.com/public/shows/4d1eb966-6f07-4562-b9f1-9fd512f9631e", // Abroad in Japan
+"https://feeds.blubrry.com/feeds/power_up_eetimes.xml", // PowerUp / EETimes
 "https://feeds.simplecast.com/8fQdS6Dx", // MIT Chalk Radio
-// Numberphile
-// Lex Friedman
+"https://www.numberphile.com/podcast?format=rss", // Numberphile
+"https://lexfridman.com/feed/podcast/", // Lex Fridman
 // Bangkok Podcast
 // Hidden Experience
 // Foundation for Middle East Peace (FMEP)

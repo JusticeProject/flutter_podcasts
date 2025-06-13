@@ -176,11 +176,12 @@ String getGuidOfItem(XmlElement item)
   // <guid isPermaLink="false">aadf1025-c84e-4553-aaf0-034a21f73a21</guid>
   // <guid isPermaLink="false"><![CDATA[926dde42-3a2c-11ef-8844-a758818393e3]]></guid>
   // <guid isPermaLink="false">rustacean-station/episode/accesskit-with-matt-campbell-and-arnold-loubriat/</guid>
+  // <guid isPermaLink="false">https://lexfridman.com/?p=6244</guid>
 
   String innerText = guid.innerText;
   if (!innerText.contains("/"))
   {
-    return innerText;
+    return removeIllegalChars(innerText);
   }
 
   if (innerText.endsWith("/"))
@@ -189,13 +190,25 @@ String getGuidOfItem(XmlElement item)
     // I could probably use this method for the scenario below as well, but the below method is faster
     // and uses less RAM.
     List<String> innerTextSplit = innerText.split("/");
-    return innerTextSplit.lastWhere((element) => element.isNotEmpty, orElse: () => "");
+    String last = innerTextSplit.lastWhere((element) => element.isNotEmpty, orElse: () => "");
+    return removeIllegalChars(last);
   }
   else
   {
     // from the example above this will produce twig0822.mp3
-    return innerText.substring(innerText.lastIndexOf("/") + 1);
+    String sub = innerText.substring(innerText.lastIndexOf("/") + 1);
+    return removeIllegalChars(sub);
   }
+}
+
+//*************************************************************************************************
+
+String removeIllegalChars(String input)
+{
+  // need to remove characters:
+  // \ ? : * " < > | =
+  RegExp re = RegExp(r'[\\:*?"<>|=]');
+  return input.replaceAll(re, "");
 }
 
 //*************************************************************************************************
