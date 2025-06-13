@@ -201,6 +201,13 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
       }
 
       Feed feedToRemove = _feedList.removeAt(index);
+
+      // if the current episode in the miniplayer is from this feed then remove it from the miniplayer
+      if (_currentEpisode != null && _currentEpisode!.localDir == feedToRemove.localDir)
+      {
+        _currentEpisode = null;
+      }
+
       await Directory(feedToRemove.localDir).delete(recursive: true);
       notifyListeners();
       removeSavedPlaybackPositions(feedToRemove);
@@ -387,6 +394,13 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
             // no matching episode, delete the file
             logDebugMsg("deleting outdated file $filename from feed ${feed.title}");
             await File(item.path).delete();
+
+            // check if the file we just deleted is currently being used by the mini player
+            if (_currentEpisode != null && _currentEpisode!.localDir == feed.localDir && _currentEpisode!.guid == filename)
+            {
+              logDebugMsg(("removing deleted file from the mini player"));
+              _currentEpisode = null;
+            }
           }
         }
       }
@@ -461,6 +475,9 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
 
       logDebugMsg("_highestFeedNumber = $_highestFeedNumber");
 
+      // if there is an episode that has playback position information then load it into the mini player
+      initializeCurrentEpisode();
+
       // for testing the circular progress indicator
       //await Future.delayed(Duration(seconds: 5));
       _isInitializing = false;
@@ -480,6 +497,24 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
         {
           // load the feed 
           _feedList[i] = await _gatherFeedInfo(_feedList[i].localDir, false, true);
+        }
+      }
+    }
+  }
+
+  //*********************************************
+
+  void initializeCurrentEpisode()
+  {
+    for (Feed feed in _feedList)
+    {
+      for (Episode episode in feed.episodes)
+      {
+        if (episode.playbackPosition.inSeconds > 0)
+        {
+          // just use the first one we find
+          _currentEpisode = episode;
+          return;
         }
       }
     }
@@ -510,7 +545,8 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
   // https://api.flutter.dev/flutter/widgets/RestorationMixin-mixin.html
   // https://docs.flutter.dev/platform-integration/android/restore-state-android
 
-  // TODO: need to save the guid / filename of _currentEpisode, only if it has changed
+  // TODO: what if user refreshes while an episode is playing, feed is skipped during refresh, episode finishes while other 
+  // feeds are refreshing, then the feed whose episode just finished is reloaded?
 
   // TODO: when should I save the playback positions? whenever an episode is paused or complete? (I could pass in a bool to pauseEpisode
   // so it saves when you press the pause button but not when you press play when a different episode is already playing - it pauses the first
@@ -778,6 +814,12 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
           }
         }
       }
+    }
+
+    // if refreshing then don't continue because the episode they are trying to play might get deleted
+    if (isRefreshing)
+    {
+      throw Exception("Please wait for the refresh to finish");
     }
 
     // This is a callback that we will register soon. It will be called periodically while the episode is playing
