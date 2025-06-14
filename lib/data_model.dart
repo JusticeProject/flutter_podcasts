@@ -372,7 +372,28 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
       await loadPlaybackPositions(feed);
     }
 
+    // if the current episode in the mini player belongs to this feed we need to update it with the new Episode object we just created
+    _updateCurrentEpisode(feed);
+    
     return feed;
+  }
+
+  //*********************************************
+
+  void _updateCurrentEpisode(Feed feed)
+  {
+    if (_currentEpisode != null && _currentEpisode!.localDir == feed.localDir)
+    {
+      for (Episode episode in feed.episodes)
+      {
+        if (episode.filename == _currentEpisode!.filename)
+        {
+          logDebugMsg("mini player updated with new current episode");
+          _currentEpisode = episode;
+          return;
+        }
+      }
+    }
   }
 
   //*********************************************
@@ -544,9 +565,6 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
   // alternative option for saving playbackPositions:
   // https://api.flutter.dev/flutter/widgets/RestorationMixin-mixin.html
   // https://docs.flutter.dev/platform-integration/android/restore-state-android
-
-  // TODO: what if user refreshes while an episode is playing, feed is skipped during refresh, episode finishes while other 
-  // feeds are refreshing, then the feed whose episode just finished is reloaded?
 
   // TODO: when should I save the playback positions? whenever an episode is paused or complete? (I could pass in a bool to pauseEpisode
   // so it saves when you press the pause button but not when you press play when a different episode is already playing - it pauses the first
