@@ -471,40 +471,39 @@ void showRemoveFeedDialog(BuildContext context, String title, int index, void Fu
 // my default RSS feeds
 List<String> urls = [
 "https://feeds.twit.tv/sn.xml", // Security Now
-"https://feeds.twit.tv/twig.xml", // This Week in Google -> Intelligent Machines
+// "https://feeds.twit.tv/twig.xml", // This Week in Google -> Intelligent Machines
 "https://feeds.twit.tv/uls.xml", // The Untitled Linux Show
-"https://feeds.libsyn.com/499093/rss", // FLOSS Weekly
+// "https://feeds.libsyn.com/499093/rss", // FLOSS Weekly
 "https://feeds.simplecast.com/6WD3bDj7", // Triple Click
 "https://feeds.simplecast.com/JT6pbPkg", // Google DeepMind
 // Google AI Release Notes
 "https://makingembeddedsystems.libsyn.com/rss", // Embedded.fm
 "https://talkpython.fm/episodes/rss", // Talk Python to Me
-"https://pythonbytes.fm/episodes/rss", // Python Bytes
-"https://feeds.simplecast.com/4T39_jAj", // StarTalk
-"https://pinecast.com/feed/the-minnmax-show", // The MinnMax Show
+// "https://pythonbytes.fm/episodes/rss", // Python Bytes
+"https://feeds.simplecast.com/4T39_jAj", // Star Talk
+// "https://pinecast.com/feed/the-minnmax-show", // The MinnMax Show
 "https://feeds.megaphone.fm/gamescoop", // Game Scoop!
-"https://feeds.megaphone.fm/ignbeyond", // Beyond!
-"https://feeds.megaphone.fm/ignunlocked", // Podcast Unlocked (Xbox)
-"https://feeds.megaphone.fm/nvc", // Nintendo Voice Chat
+// "https://feeds.megaphone.fm/ignbeyond", // Beyond!
+// "https://feeds.megaphone.fm/ignunlocked", // Podcast Unlocked (Xbox)
+// "https://feeds.megaphone.fm/nvc", // Nintendo Voice Chat
 "https://feeds.megaphone.fm/ignconsolewatch", // Next-Gen Console Watch
 "https://feeds.npr.org/510289/podcast.xml", // Planet Money
-"https://feeds.npr.org/510325/podcast.xml", // The Indicator (NPR)
-"https://feeds.simplecast.com/h18ZIZD_", // Science Friday
-// Stuff You Should Know
-"https://www.thisamericanlife.org/podcast/rss.xml", // This American Life
-"https://feeds.megaphone.fm/search-engine", // Search Engine
-"https://feeds.megaphone.fm/kindafunnypodcast", // Kinda Funny Podcast
-"https://feeds.megaphone.fm/ROOSTER8838278962", // Kinda Funny Games Daily
-"https://feeds.megaphone.fm/STU5682506591", // Sacred Symbols (Playstation)
-"https://feeds.libsyn.com/78795/rss", // Dev Game Club
-"https://eightfour.libsyn.com/rss", // 8-4 Play
-"https://letscast.fm/podcasts/rust-in-production-82281512/feed", // Rust In Production
-"https://rustacean-station.org/podcast.rss", // Rustacean Station
-"https://feeds.transistor.fm/fallthrough", // Fallthrough (Go)
+// "https://feeds.npr.org/510325/podcast.xml", // The Indicator (NPR)
+// "https://feeds.simplecast.com/h18ZIZD_", // Science Friday
+// "https://www.thisamericanlife.org/podcast/rss.xml", // This American Life
+// "https://feeds.megaphone.fm/search-engine", // Search Engine
+// "https://feeds.megaphone.fm/kindafunnypodcast", // Kinda Funny Podcast
+// "https://feeds.megaphone.fm/ROOSTER8838278962", // Kinda Funny Games Daily
+// "https://feeds.megaphone.fm/STU5682506591", // Sacred Symbols (Playstation)
+// "https://feeds.libsyn.com/78795/rss", // Dev Game Club
+// "https://eightfour.libsyn.com/rss", // 8-4 Play
+// "https://letscast.fm/podcasts/rust-in-production-82281512/feed", // Rust In Production
+// "https://rustacean-station.org/podcast.rss", // Rustacean Station
+// "https://feeds.transistor.fm/fallthrough", // Fallthrough (Go)
 "https://feeds.acast.com/public/shows/4d1eb966-6f07-4562-b9f1-9fd512f9631e", // Abroad in Japan
-"https://feeds.blubrry.com/feeds/power_up_eetimes.xml", // PowerUp / EETimes
-"https://feeds.simplecast.com/8fQdS6Dx", // MIT Chalk Radio
-"https://www.numberphile.com/podcast?format=rss", // Numberphile
+// "https://feeds.blubrry.com/feeds/power_up_eetimes.xml", // PowerUp / EETimes
+// "https://feeds.simplecast.com/8fQdS6Dx", // MIT Chalk Radio
+// "https://www.numberphile.com/podcast?format=rss", // Numberphile
 "https://lexfridman.com/feed/podcast/", // Lex Fridman
 // Bangkok Podcast
 // Hidden Experience
