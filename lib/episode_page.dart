@@ -179,6 +179,12 @@ class _AudioProgressBarState extends State<AudioProgressBar>
       return 0.0;
     }
 
+    // don't want to divide by 0
+    if (playLength.inSeconds == 0)
+    {
+      return 0.0;
+    }
+
     double calculatedSliderValue = playbackPosition.inSeconds.toDouble() / playLength.inSeconds.toDouble();
     return calculatedSliderValue > 1.0 ? 1.0 : calculatedSliderValue;
   }

@@ -744,7 +744,7 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
 
         bytesReceived += dataChunk.length;
         numChunksReceived++;
-        if (numChunksReceived % 100 == 0)
+        if (numChunksReceived % 100 == 0 && bytesExpected != 0.0) // don't want to divide by 0
         {
           // the UI can update the download progress every x chunks received
           episode.downloadProgress = math.min(bytesReceived / bytesExpected, 1.0);
