@@ -16,6 +16,7 @@ import 'xml_reader.dart';
 
 // TODO: audio player shows on lockscreen, stops playing when headphones removed, try this package
 // https://pub.dev/packages/audio_service
+// This could also help keep the AudioPlayer running without Android shutting it down when the screen is locked.
 
 //*************************************************************************************************
 
@@ -806,16 +807,6 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
   //*********************************************
   //*********************************************
 
-  void showMiniPlayer(Episode episode)
-  {
-    _currentEpisode = episode;
-    notifyListeners();
-  }
-
-  //*********************************************
-  //*********************************************
-  //*********************************************
-
   Future<void> playEpisode(Episode episode) async
   {
     // First check if a file is already playing. If so it's probably a different file, so this will pause it and 
@@ -884,8 +875,11 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
     episode.playLength = await _audioPlayer.getDuration();
     // Register for position updates only after it has started playing and we have the total duration of the file
     _playbackPositionSubscription = _audioPlayer.onPositionChanged.listen(onPlaybackPositionUpdates);
+    // TODO: use audioPlayer.onPlayerStateChanged to detect when AudioPlayer suddenly stops due to phone call or 
+    // some other reason?
     
-    logDebugMsg("now playing at position ${await _audioPlayer.getCurrentPosition()}");
+    //logDebugMsg("now playing at position ${await _audioPlayer.getCurrentPosition()}");
+    _currentEpisode = episode;
     episode.isPlaying = true;
     _getFeedOfEpisode(episode).isPlaying = true;
     episode.played = false;

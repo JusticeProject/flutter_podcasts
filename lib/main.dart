@@ -86,7 +86,6 @@ class _LibraryPageState extends State<LibraryPage>
 {
   late final ScrollController _scrollController;
   bool _showExtendedButton = true;
-  late List<Feed> _feedList;
   late int _tapCount;
   late DateTime _lastTapTime;
 
@@ -97,7 +96,6 @@ class _LibraryPageState extends State<LibraryPage>
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScrollPositionChanged);
-    _feedList = [];
     _tapCount = 0;
     _lastTapTime = DateTime.now();
   }
@@ -108,7 +106,6 @@ class _LibraryPageState extends State<LibraryPage>
   void dispose() {
     _scrollController.removeListener(_onScrollPositionChanged);
     _scrollController.dispose();
-    _feedList = [];
     super.dispose();
   }
 
@@ -171,7 +168,7 @@ class _LibraryPageState extends State<LibraryPage>
   {
     try
     {
-      // we'll wait for this complete
+      // we'll wait for this to complete
       await dataModel.addFeed(url);
 
       // we won't wait for this: scroll to the bottom of the list after a delay to give time for 
@@ -271,11 +268,6 @@ class _LibraryPageState extends State<LibraryPage>
             {
               return Center(child: const CircularProgressIndicator());
             }
-        
-            if (!dataModel.isRefreshing)
-            {
-              _feedList = dataModel.feedList;
-            }
           
             // wrap the GridView with RefreshIndicator which allows you to swipe down to refresh
             return RefreshIndicator(
@@ -293,9 +285,9 @@ class _LibraryPageState extends State<LibraryPage>
                   ),
                   controller: _scrollController,
                   padding: EdgeInsets.all(18),
-                  itemCount: _feedList.length,
+                  itemCount: dataModel.feedList.length,
                   itemBuilder: (context, index) {
-                    Feed feed = _feedList[index];
+                    Feed feed = dataModel.feedList[index];
                     return GestureDetector(
                       // disable tapping on each albumArt while refreshing
                       onTap: dataModel.isBusy ? null : () => _onFeedPreviewTapped(context, feed),
@@ -480,13 +472,13 @@ List<String> urls = [
 "https://makingembeddedsystems.libsyn.com/rss", // Embedded.fm
 "https://talkpython.fm/episodes/rss", // Talk Python to Me
 // "https://pythonbytes.fm/episodes/rss", // Python Bytes
-"https://feeds.simplecast.com/4T39_jAj", // Star Talk
-// "https://pinecast.com/feed/the-minnmax-show", // The MinnMax Show
+// "https://feeds.simplecast.com/4T39_jAj", // Star Talk
+"https://pinecast.com/feed/the-minnmax-show", // The MinnMax Show
 "https://feeds.megaphone.fm/gamescoop", // Game Scoop!
 // "https://feeds.megaphone.fm/ignbeyond", // Beyond!
 // "https://feeds.megaphone.fm/ignunlocked", // Podcast Unlocked (Xbox)
 // "https://feeds.megaphone.fm/nvc", // Nintendo Voice Chat
-"https://feeds.megaphone.fm/ignconsolewatch", // Next-Gen Console Watch
+// "https://feeds.megaphone.fm/ignconsolewatch", // Next-Gen Console Watch
 "https://feeds.npr.org/510289/podcast.xml", // Planet Money
 // "https://feeds.npr.org/510325/podcast.xml", // The Indicator (NPR)
 // "https://feeds.simplecast.com/h18ZIZD_", // Science Friday
@@ -500,11 +492,13 @@ List<String> urls = [
 // "https://letscast.fm/podcasts/rust-in-production-82281512/feed", // Rust In Production
 // "https://rustacean-station.org/podcast.rss", // Rustacean Station
 // "https://feeds.transistor.fm/fallthrough", // Fallthrough (Go)
-"https://feeds.acast.com/public/shows/4d1eb966-6f07-4562-b9f1-9fd512f9631e", // Abroad in Japan
+// "https://feeds.acast.com/public/shows/4d1eb966-6f07-4562-b9f1-9fd512f9631e", // Abroad in Japan
 // "https://feeds.blubrry.com/feeds/power_up_eetimes.xml", // PowerUp / EETimes
 // "https://feeds.simplecast.com/8fQdS6Dx", // MIT Chalk Radio
 // "https://www.numberphile.com/podcast?format=rss", // Numberphile
 "https://lexfridman.com/feed/podcast/", // Lex Fridman
+"https://feeds.megaphone.fm/LILLL9002079998", // Shane Smith has Questions
+"https://feeds.megaphone.fm/theezrakleinshow", // Vox the Gray Area
 // Bangkok Podcast
 // Hidden Experience
 // Foundation for Middle East Peace (FMEP)

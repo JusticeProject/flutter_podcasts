@@ -131,7 +131,6 @@ class PlayButton extends StatelessWidget
     try
     {
       await dataModel.playEpisode(episode);
-      dataModel.showMiniPlayer(episode);
     }
     catch (err)
     {
