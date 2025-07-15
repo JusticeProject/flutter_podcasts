@@ -876,7 +876,7 @@ class DataModel extends ChangeNotifier with WidgetsBindingObserver
     // Register for position updates only after it has started playing and we have the total duration of the file
     _playbackPositionSubscription = _audioPlayer.onPositionChanged.listen(onPlaybackPositionUpdates);
     // TODO: use audioPlayer.onPlayerStateChanged to detect when AudioPlayer suddenly stops due to phone call or 
-    // some other reason?
+    // some other reason? it can call pauseEpisode() below but some things will be different from the normal call to pauseEpisode
     
     //logDebugMsg("now playing at position ${await _audioPlayer.getCurrentPosition()}");
     _currentEpisode = episode;
